@@ -1,3 +1,3 @@
-# PbRL_Research
+# RL_Research
 
-Contains codes/notes about my PbRL focused research and experiments
+Contains codes/notes about my RL focused research and experiments
