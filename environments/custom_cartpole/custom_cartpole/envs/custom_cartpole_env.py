@@ -37,7 +37,7 @@ class CustomCartPoleEnv(gym.Env):
         Action                      Action value Range       Action effect (forece)
         Push cart to the left       [-1,0)                   action_value * 50N
         Do nothing                  0                        -
-        Push cart to the right      (0,1] * 50N              action_value * 50N 
+        Push cart to the right      (0,1]                    action_value * 50N 
         
         Note: The amount the velocity that is reduced or increased is not
         fixed; it depends on the angle the pole is pointing. This is because
