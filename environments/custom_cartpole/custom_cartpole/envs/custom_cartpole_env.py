@@ -18,38 +18,49 @@ class CustomCartPoleEnv(gym.Env):
         a frictionless track. The pendulum starts upright, and the goal is to
         prevent it from falling over by increasing and reducing the cart's
         velocity.
+    
     Source:
         This environment corresponds to the version of the cart-pole problem
-        described by Barto, Sutton, and Anderson
+        described by Barto, Sutton, and Anderson.
+        Pendulum dynamics are adjusted based on nonlinear dynamics defined by Wang et al., 1996
+    
     Observation:
         Type: Box(4)
         Num     Observation               Min                     Max
-        0       Cart Position             -4.8                    4.8
+        0       Cart Position             -4800                   4800
         1       Cart Velocity             -Inf                    Inf
-        2       Pole Angle                -0.418 rad (-24 deg)    0.418 rad (24 deg)
+        2       Pole Angle                -90 deg                 90 deg
         3       Pole Angular Velocity     -Inf                    Inf
+    
     Actions:
-        Type: Discrete(2)
-        Num   Action
-        -1     Push cart to the left
-         0     Do nothing
-         1     Push cart to the right
+        Type: Box(1)
+        Action                      Action value Range       Action effect (forece)
+        Push cart to the left       [-1,0)                   action_value * 50N
+        Do nothing                  0                        -
+        Push cart to the right      (0,1] * 50N              action_value * 50N 
+        
         Note: The amount the velocity that is reduced or increased is not
         fixed; it depends on the angle the pole is pointing. This is because
         the center of gravity of the pole increases the amount of energy needed
         to move the cart underneath it
+    
     Reward:
         Reward is 1 for every step taken, including the termination step
+    
     Starting State:
         All observations are assigned a uniform random value in [-0.05..0.05]
+        Possible to pass any initial state when required
+    
     Episode Termination:
-        Pole Angle is more than 12 degrees.
-        Cart Position is more than 2.4 (center of the cart reaches the edge of
-        the display).
-        Episode length is greater than 200.
+        Pole Angle is more than 90 degrees.
+        Cart Position is more than 2400.
+        Episode length is greater than 1,500.
+        
         Solved Requirements:
         Considered solved when the average return is greater than or equal to
-        195.0 over 100 consecutive trials.
+        1,000 over 100 consecutive trials.
+        
+    
     """
 
     metadata = {
@@ -64,13 +75,13 @@ class CustomCartPoleEnv(gym.Env):
         self.total_mass = (self.masspole + self.masscart)
         self.length = 0.5  # actually half the pole's length
         self.polemass_length = (self.masspole * self.length)
-        self.force_mag = 50.0
-        self.tau = 0.1  # seconds between state updates (original: 0.02)
-        self.kinematics_integrator = 'euler'
+        self.force_mag = 50.0 # UPDATED
+        self.tau = 0.1  # seconds between state updates - UPDATED (original: 0.02)
+        self.kinematics_integrator = 'semi-implicit euler' # - UPDATED (original: euler) | semi-implicit is more stable: https://github.com/openai/gym/pull/1019
 
         # Angle at which to fail the episode
-        self.theta_threshold_radians = 90 * 2 * math.pi / 360 # UPDATED TO 90 DEGREES
-        self.x_threshold = 2.4 * 100
+        self.theta_threshold_radians = 90 * 2 * math.pi / 360 # UPDATED -  (original: 12 degrees)
+        self.x_threshold = 2.4 * 100 # UPDATED -  (original: 2.4)
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation
         # is still within bounds.
@@ -81,7 +92,7 @@ class CustomCartPoleEnv(gym.Env):
                         dtype=np.float32)
 
         #self.action_space = spaces.Discrete(2)
-        self.action_space = spaces.Box(low=-1, high = 1, shape = (1,1), dtype=np.float32) # <- new action space --
+        self.action_space = spaces.Box(low=-1, high = 1, shape = (1,1), dtype=np.float32) # UPDATED - (original: spaces.Discrete(2))
         self.observation_space = spaces.Box(-high, high, dtype=np.float32)
 
         self.seed()
@@ -100,15 +111,14 @@ class CustomCartPoleEnv(gym.Env):
 
         x, x_dot, theta, theta_dot = self.state
         #force = self.force_mag if action == 1 else -self.force_mag # original 'force'
-        #force = self.force_mag * action
         
-        # continuous 'force'
+        # continuous 'force' | UPDATED - (original: self.force_mag if action == 1 else -self.force_mag)
         if action > 0:
-            force = self.force_mag * action   # <- updated due to new action space -
+            force = self.force_mag * action  
         elif action < 0:
-            force = self.force_mag * action  # <- updated due to new action space -
+            force = self.force_mag * action 
         else:
-            force = 0  # <- updated due to new action space -
+            force = 0 
 
         costheta = math.cos(theta)
         sintheta = math.sin(theta)
@@ -121,10 +131,10 @@ class CustomCartPoleEnv(gym.Env):
         # ORIGINAL nonlinear dynamics of the system
         #thetaacc = (self.gravity * sintheta - costheta * temp) / (self.length * (4.0 / 3.0 - self.masspole * costheta ** 2 / self.total_mass)) # original equation
         
-        # NEW nonlinear dynamics of the system by Wang et al. 1996 (based on Dimitrakakis and Lagoudakis 2008)
+        # UPDATED nonlinear dynamics of the system by Wang et al. 1996 (based on Dimitrakakis and Lagoudakis 2008)
         sin2theta = math.sin(2*theta)
         alpha = 1/(self.total_mass)
-        thetaacc = ((self.gravity * sintheta) - (alpha * self.polemass_length * (theta_dot ** 2) * (sin2theta/2)) - (alpha * costheta * force)) / ((self.length * (4.0 / 3.0)) - (alpha * self.polemass_length * costheta ** 2))
+        thetaacc = ((self.gravity * sintheta) - (alpha * self.polemass_length * (theta_dot ** 2) * (sin2theta/2)) - (alpha * costheta * force)) / ((self.length * (4.0 / 3.0)) - (alpha * self.polemass_length * (costheta ** 2)))
                 
         xacc = temp - self.polemass_length * thetaacc * costheta / self.total_mass
 
@@ -176,16 +186,16 @@ class CustomCartPoleEnv(gym.Env):
         return np.array(self.state)
 
     def render(self, mode='human'):
-        screen_width = 600 * 2
-        screen_height = 400 * 2
+        screen_width = 600 * 2 # UPDATED - since x_threshold is increased
+        screen_height = 400 * 2 # UPDATED - since x_threshold is increased
 
         world_width = self.x_threshold * 2
         scale = screen_width/world_width
         carty = 100  # TOP OF CART
-        polewidth = 10.0
-        polelen = scale * (2 * self.length) * 40
-        cartwidth = 50.0
-        cartheight = 30.0
+        polewidth = 10.0 / (2) # UPDATED - since x_threshold is increased
+        polelen = scale * (2 * self.length) * (20) # UPDATED - since x_threshold is increased
+        cartwidth = 50.0 / (2) # UPDATED - since x_threshold is increased
+        cartheight = 30.0 / (2) # UPDATED - since x_threshold is increased
 
         if self.viewer is None:
             from gym.envs.classic_control import rendering
@@ -193,7 +203,7 @@ class CustomCartPoleEnv(gym.Env):
             l, r, t, b = -cartwidth / 2, cartwidth / 2, cartheight / 2, -cartheight / 2
             axleoffset = cartheight / 4.0
             cart = rendering.FilledPolygon([(l, b), (l, t), (r, t), (r, b)])
-            cart.set_color(0,0,10) # <- changed the color of the cart --
+            cart.set_color(0,0,10) # UPDATED 
             self.carttrans = rendering.Transform()
             cart.add_attr(self.carttrans)
             self.viewer.add_geom(cart)
