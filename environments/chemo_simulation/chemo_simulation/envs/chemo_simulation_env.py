@@ -69,7 +69,11 @@ class ChemoSimulationEnv(gym.Env):
         Possible to pass an initial state when required.
     
     Episode Termination:
-        The probability of death exceeds 0.99.
+        As of now, there is no termination condition in place since the original model in Zhao et al. (2009) 
+        does not specify one.
+        It is possible to define termination conditions based on:
+            - the probability of death of a patient between two successive treatments (e.g., P(death) > 0.99),
+            - tumor size at a given time point (e.g., tumor size < 0).
         
     """
     
@@ -93,7 +97,7 @@ class ChemoSimulationEnv(gym.Env):
         self.mu_1, self.mu_2 = 1,1 # To denote both tumor size and toxicity have equal influence on patient’s survival.
 
         # Termination condition on patient's probabilty of death
-        self.death_prop_threshold = 0.99
+        self.death_prop_threshold = 1
         
         # Chemotherapy dose levels: possible values in the range [0,1]
         self.action_space = spaces.Box(low=0, high=1, shape = (1,), dtype=np.float32)
@@ -132,7 +136,8 @@ class ChemoSimulationEnv(gym.Env):
         m_t_new = m_t + m_dot_t
         w_t_new = w_t + w_dot_t
 
-        self.state = (m_t_new, w_t_new)
+        # Tumor size cannot be less than 0
+        self.state = (np.clip(m_t_new,0,100), w_t_new)
         
         # Hazard rate model
         lambda_t     = np.exp(self.mu_0 + self.mu_1*w_t + self.mu_2 * m_t)
@@ -144,8 +149,10 @@ class ChemoSimulationEnv(gym.Env):
         
         
         # Check for termination condition
-        done = bool(p_death>=self.death_prop_threshold)
-        
+        # As of now, there is no termination condition in place
+        # Prob. death == 1
+        done = bool(p_death > self.death_prop_threshold )
+    
         if not done:
             reward = 1.0
         else:
