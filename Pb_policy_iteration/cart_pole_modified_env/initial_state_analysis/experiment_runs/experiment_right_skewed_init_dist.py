@@ -2,7 +2,7 @@
 ### Tested Parameter Configurations ###
 #######################################
 
-CONFIGS = {'S': [50]
+CONFIGS = {'S': [40]
           , 'Actions' : [3]
           , 'Roll-outs': [10, 20, 50, 100]
           , 'Significance' : [0.025, 0.05, 0.1]
