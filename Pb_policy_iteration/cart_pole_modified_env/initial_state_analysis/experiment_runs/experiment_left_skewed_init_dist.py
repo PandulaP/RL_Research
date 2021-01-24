@@ -8,8 +8,7 @@ CONFIGS = {'S': [40]
           , 'Significance' : [0.025, 0.05, 0.1]
           }
 
-#INIT_STATE_FILE_PATH = '../init_state_data/left_skewed_states.csv'
-INIT_STATE_FILE_PATH = 'init_state_data/left_skewed_states.csv'
+INIT_STATE_FILE_PATH = '../init_state_data/left_skewed_states.csv'
 PATH_POST_FIX = 'left_skewed'
 N_SAMPLES = 40
 
@@ -948,5 +947,7 @@ def run_experiment(CONFIGS):
     
 
 if __name__ == '__main__':
+
+    INIT_STATE_FILE_PATH = 'init_state_data/left_skewed_states.csv'
     
     run_experiment(CONFIGS)
