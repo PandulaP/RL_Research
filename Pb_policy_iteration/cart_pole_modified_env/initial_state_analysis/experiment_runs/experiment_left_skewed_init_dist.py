@@ -8,7 +8,7 @@ CONFIGS = {'S': [50]
           , 'Significance' : [0.025, 0.05, 0.1]
           }
 
-INIT_STATE_FILE_PATH = '../init_state_data/unbiased_states.csv'
+INIT_STATE_FILE_PATH = '../init_state_data/left_skewed_states.csv'
 
 ########################################
 ### importing the necessary packages ###
@@ -62,67 +62,67 @@ def random_action(environment, seed=10):
     return environment.action_space.sample()
 
 
-# generate a list of initial states from a given environment
-def generate_init_states_S(seed
-                           , env = 'CustomCartPole-v0'
-                           , sample_size = 10 # how many states to include in the sample
-                          ):
-    """ this function returns a list of randomly generated initial states from a given environment. """
+# # generate a list of initial states from a given environment
+# def generate_init_states_S(seed
+#                            , env = 'CustomCartPole-v0'
+#                            , sample_size = 10 # how many states to include in the sample
+#                           ):
+#     """ this function returns a list of randomly generated initial states from a given environment. """
     
-    # set the random seed for reproducibility
-    np.random.seed(seed)
+#     # set the random seed for reproducibility
+#     np.random.seed(seed)
     
-    # define how many initial states to generate altogether
-    n_states = np.random.randint(low=201, high=301) 
+#     # define how many initial states to generate altogether
+#     n_states = np.random.randint(low=201, high=301) 
     
-    # define how many states to sample from the generated states
-    n_states_sample = np.random.randint(low=sample_size, high=sample_size+1) 
+#     # define how many states to sample from the generated states
+#     n_states_sample = np.random.randint(low=sample_size, high=sample_size+1) 
 
-    # define a list to store the generated initial states
-    init_states_S = []
+#     # define a list to store the generated initial states
+#     init_states_S = []
 
-    # create a given environment object
-    env = gym.make(env)
-    env.action_space.np_random.seed(seed) # set env. seeds for reproducibility
-    env.seed(seed) # set env. seeds for reproducibility
-    env.reset(init_state = np.array([0,0,0,0]))
+#     # create a given environment object
+#     env = gym.make(env)
+#     env.action_space.np_random.seed(seed) # set env. seeds for reproducibility
+#     env.seed(seed) # set env. seeds for reproducibility
+#     env.reset(init_state = np.array([0,0,0,0]))
 
-    # generate initial states
-    s_count = 0
-    while s_count < n_states:
+#     # generate initial states
+#     s_count = 0
+#     while s_count < n_states:
 
-        # step through the environment by taking random actions
-        state, reward, done, info = env.step(env.action_space.sample())  
+#         # step through the environment by taking random actions
+#         state, reward, done, info = env.step(env.action_space.sample())  
             
-        # If terminates, reset the environment and continue to next step
-        #   (without appending the termination state to the list).
-        # Increment 'n_states' count by 7 since last 7 states from the termination state are removed
-        #  to avoid having states close to termination in the initial state list.
-        if done: 
-            env.reset(init_state = np.array([0,0,0,0]))
-            n_states+=7
-            init_states_S = init_states_S[:-7]
-            continue
+#         # If terminates, reset the environment and continue to next step
+#         #   (without appending the termination state to the list).
+#         # Increment 'n_states' count by 7 since last 7 states from the termination state are removed
+#         #  to avoid having states close to termination in the initial state list.
+#         if done: 
+#             env.reset(init_state = np.array([0,0,0,0]))
+#             n_states+=7
+#             init_states_S = init_states_S[:-7]
+#             continue
             
-        # append the observed state to the initial state list
-        init_states_S.append(state)
+#         # append the observed state to the initial state list
+#         init_states_S.append(state)
         
-        s_count +=1
+#         s_count +=1
       
-    env.close()
+#     env.close()
     
-    # remove any duplicate state values from the list
-    state_str_li = []
-    for state in init_states_S:
-        state_str_li.append("".join([str(item[0]) for item in [item.reshape(-1) for item in state.flatten()]]))
+#     # remove any duplicate state values from the list
+#     state_str_li = []
+#     for state in init_states_S:
+#         state_str_li.append("".join([str(item[0]) for item in [item.reshape(-1) for item in state.flatten()]]))
 
-    uniq, uni_id = np.unique(state_str_li, return_index=True)
-    init_states_S = [init_states_S[j] for j in uni_id]
+#     uniq, uni_id = np.unique(state_str_li, return_index=True)
+#     init_states_S = [init_states_S[j] for j in uni_id]
     
-    # sample the required number of states (uniform random sampling)
-    sampled_states = random.sample(init_states_S, n_states_sample)
+#     # sample the required number of states (uniform random sampling)
+#     sampled_states = random.sample(init_states_S, n_states_sample)
             
-    return sampled_states #init_states_S
+#     return sampled_states #init_states_S
     
 
 # partition the action space of a given environment 
