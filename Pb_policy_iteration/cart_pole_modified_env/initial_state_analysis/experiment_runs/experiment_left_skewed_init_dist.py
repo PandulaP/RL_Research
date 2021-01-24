@@ -10,6 +10,7 @@ CONFIGS = {'S': [40]
 
 INIT_STATE_FILE_PATH = '../init_state_data/left_skewed_states.csv'
 PATH_POST_FIX = 'left_skewed'
+N_SAMPLES = 40
 
 ########################################
 ### importing the necessary packages ###
@@ -697,7 +698,7 @@ def evaluations_per_config(s_size
     env = gym.make(env_name)   # create environment
     
     # ASSIGN THE CUSTOM INITIAL STATES
-    sample_states =np.array(pd.read_csv(INIT_STATE_FILE_PATH ).values).reshape(50,4,1,1)
+    sample_states =np.array(pd.read_csv(INIT_STATE_FILE_PATH ).values).reshape(N_SAMPLES,4,1,1)
     
     #sample_states = generate_init_states_S(seed = seed, env = env_name, sample_size = s_size)  # generate sample states
     act_space = partition_action_space(env_name = env_name, n_actions = n_actions) # partition the action space
