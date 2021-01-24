@@ -1,1 +1,1 @@
-Includes the model training images
+Includes the experiment runs evaluation result plots.
