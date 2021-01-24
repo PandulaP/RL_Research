@@ -8,7 +8,8 @@ CONFIGS = {'S': [40]
           , 'Significance' : [0.025, 0.05, 0.1]
           }
 
-INIT_STATE_FILE_PATH = '../init_state_data/unbiased_states.csv'
+#INIT_STATE_FILE_PATH = '../init_state_data/unbiased_states.csv'
+INIT_STATE_FILE_PATH = 'init_state_data/unbiased_states.csv'
 PATH_POST_FIX = 'unbiased'
 N_SAMPLES = 40
 

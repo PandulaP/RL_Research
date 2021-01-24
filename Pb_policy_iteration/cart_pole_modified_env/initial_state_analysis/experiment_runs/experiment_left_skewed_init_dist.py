@@ -8,7 +8,8 @@ CONFIGS = {'S': [40]
           , 'Significance' : [0.025, 0.05, 0.1]
           }
 
-INIT_STATE_FILE_PATH = '../init_state_data/left_skewed_states.csv'
+#INIT_STATE_FILE_PATH = '../init_state_data/left_skewed_states.csv'
+INIT_STATE_FILE_PATH = 'init_state_data/left_skewed_states.csv'
 PATH_POST_FIX = 'left_skewed'
 N_SAMPLES = 40
 
