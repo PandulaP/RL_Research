@@ -9,6 +9,7 @@ CONFIGS = {'S': [50]
           }
 
 INIT_STATE_FILE_PATH = '../init_state_data/right_skewed_states.csv' 
+PATH_POST_FIX = 'right_skewed'
 
 ########################################
 ### importing the necessary packages ###
@@ -479,7 +480,7 @@ def train_model(train_data                  # collection of all preference data
     loss_v = fit(epochs, model, loss_fn, opt)
 
     # save the trained model
-    PATH = f"./models/{model_name}_pbpi_model.pt"
+    PATH = f"./models/{model_name}_pbpi_model_{PATH_POST_FIX }.pt"
     torch.save(model.state_dict(), PATH)
     
     # plot the model loss
@@ -880,7 +881,7 @@ def evaluations_per_config(s_size
             ax2.legend(loc='upper left')
             plt.title(f'Evaluation Results | Run: {run+1}')
 
-            plt.savefig(f'./train_imgs/{model_name}_{run}.png') # save the evaluation image
+            plt.savefig(f'./train_imgs/{model_name}_{run}_{PATH_POST_FIX}.png') # save the evaluation image
             #plt.show() 
         
         # store the evaluation results of the training run
@@ -940,7 +941,7 @@ def run_experiment(CONFIGS):
 
     results_df = pd.concat(results_dfs)
 
-    results_df.to_excel('eval_results/original_experiment_results_para_config_1.xlsx',index=False)
+    results_df.to_excel(f'eval_results/original_experiment_results_{PATH_POST_FIX}.xlsx',index=False)
     
     
 
