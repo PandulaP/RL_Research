@@ -481,7 +481,11 @@ def train_model(train_data                  # collection of all preference data
     loss_v = fit(epochs, model, loss_fn, opt)
 
     # save the trained model
-    PATH = f"./models/{model_name}_pbpi_model_{PATH_POST_FIX }.pt"
+    if __name__ == '__main__':
+        PATH = f"experiment_runs/models/{model_name}_pbpi_model_{PATH_POST_FIX }.pt"
+    else:
+        PATH = f"./models/{model_name}_pbpi_model_{PATH_POST_FIX }.pt"
+        
     torch.save(model.state_dict(), PATH)
     
     # plot the model loss
@@ -882,7 +886,10 @@ def evaluations_per_config(s_size
             ax2.legend(loc='upper left')
             plt.title(f'Evaluation Results | Run: {run+1}')
 
-            plt.savefig(f'./train_imgs/{model_name}_{run}_{PATH_POST_FIX}.png') # save the evaluation image
+            if __name__ == '__main__':
+                plt.savefig(f'experiment_runs/train_imgs/{model_name}_{run}_{PATH_POST_FIX}.png') # save the evaluation image
+            else:
+                plt.savefig(f'./train_imgs/{model_name}_{run}_{PATH_POST_FIX}.png') # save the evaluation image
             #plt.show() 
         
         # store the evaluation results of the training run
@@ -942,7 +949,10 @@ def run_experiment(CONFIGS):
 
     results_df = pd.concat(results_dfs)
 
-    results_df.to_excel(f'eval_results/original_experiment_results_{PATH_POST_FIX}.xlsx',index=False)
+    if __name__ == '__main__':
+        results_df.to_excel(f'experiment_runs/eval_results/original_experiment_results_{PATH_POST_FIX}.xlsx',index=False)
+    else:
+        results_df.to_excel(f'eval_results/original_experiment_results_{PATH_POST_FIX}.xlsx',index=False)
     
     
 
