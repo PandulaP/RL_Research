@@ -8,8 +8,8 @@ CONFIGS = {'S': [40]
           , 'Significance' : [0.025, 0.05, 0.1]
           }
 
-INIT_STATE_FILE_PATH = '../init_state_data/left_skewed_states.csv'
-PATH_POST_FIX = 'left_skewed'
+INIT_STATE_FILE_PATH = '../init_state_data/right_skewed_states.csv' 
+PATH_POST_FIX = 'right_skewed_original'
 N_SAMPLES = 40
 
 ########################################
@@ -933,7 +933,7 @@ def run_experiment(CONFIGS):
                                                     , max_n_rollouts = rollout_max
                                                     , sig_lvl = sig_lvl
                                                     , runs_per_config = 10
-                                                    , off_policy_explr = True
+                                                    , off_policy_explr = False
                                                     , print_run_eval_plot = True)
 
                 agg_results.append(run_results)
@@ -957,6 +957,6 @@ def run_experiment(CONFIGS):
     
 
 if __name__ == '__main__':
-
-    INIT_STATE_FILE_PATH = 'init_state_data/left_skewed_states.csv'
+    
+    INIT_STATE_FILE_PATH = 'init_state_data/right_skewed_states.csv' 
     run_experiment(CONFIGS)

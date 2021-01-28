@@ -933,7 +933,7 @@ def run_experiment(CONFIGS):
                                                     , max_n_rollouts = rollout_max
                                                     , sig_lvl = sig_lvl
                                                     , runs_per_config = 10
-                                                    , off_policy_explr = True
+                                                    , off_policy_explr = False
                                                     , print_run_eval_plot = True)
 
                 agg_results.append(run_results)
