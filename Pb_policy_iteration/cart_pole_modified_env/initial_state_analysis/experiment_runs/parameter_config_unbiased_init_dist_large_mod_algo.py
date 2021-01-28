@@ -2,15 +2,15 @@
 ### Tested Parameter Configurations ###
 #######################################
 
-CONFIGS = {'S': [10]
+CONFIGS = {'S': [100]
           , 'Actions' : [3]
           , 'Roll-outs': [10, 20, 50, 100]
           , 'Significance' : [0.025, 0.05, 0.1]
           }
 
-INIT_STATE_FILE_PATH = '../init_state_data/unbiased_states_small.csv'
-PATH_POST_FIX = 'unbiased_small'
-N_SAMPLES = 10
+INIT_STATE_FILE_PATH = '../init_state_data/unbiased_states_large.csv'
+PATH_POST_FIX = 'unbiased_large_modified'
+N_SAMPLES = 100
 
 ########################################
 ### importing the necessary packages ###
@@ -957,5 +957,5 @@ def run_experiment(CONFIGS):
     
 
 if __name__ == '__main__':
-    INIT_STATE_FILE_PATH = 'init_state_data/unbiased_states_small.csv'
+    INIT_STATE_FILE_PATH = 'init_state_data/unbiased_states_large.csv'
     run_experiment(CONFIGS)

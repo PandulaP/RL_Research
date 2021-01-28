@@ -2,7 +2,7 @@
 ### Tested Parameter Configurations ###
 #######################################
 
-CONFIGS = {'S': [200]
+CONFIGS = {'S': [100]
           , 'Actions' : [3]
           , 'Roll-outs': [10, 20, 50, 100]
           , 'Significance' : [0.025, 0.05, 0.1]
@@ -10,7 +10,7 @@ CONFIGS = {'S': [200]
 
 INIT_STATE_FILE_PATH = '../init_state_data/unbiased_states_large.csv'
 PATH_POST_FIX = 'unbiased_large_original'
-N_SAMPLES = 200
+N_SAMPLES = 100
 
 ########################################
 ### importing the necessary packages ###
