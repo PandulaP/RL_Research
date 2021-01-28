@@ -957,5 +957,5 @@ def run_experiment(CONFIGS):
     
 
 if __name__ == '__main__':
-    INIT_STATE_FILE_PATH = '../init_state_data/unbiased_states_small.csv'
+    INIT_STATE_FILE_PATH = 'init_state_data/unbiased_states_small.csv'
     run_experiment(CONFIGS)
