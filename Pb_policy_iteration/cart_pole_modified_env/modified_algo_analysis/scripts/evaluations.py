@@ -8,8 +8,10 @@ def run_evaluations(policy               # input policy
                     , step_thresh = 1000    # step-count (threshold)
                     , env_name = 'CustomCartPole-v0' # name of the environment
                     , simulations_per_state = 100 # number of simulations to generate per state
+                    , iterr_num = None # iterration number that the evaluation runs for
+                    , print_eval_summary = None # Whether to print the evaluation summary or not
                    ):  
-    
+                   
     """
     Description:
     
@@ -47,7 +49,7 @@ def run_evaluations(policy               # input policy
             # execute 1001 steps in the environment
             for _ in range(1001):
                 action = policy.label_ranking_policy(obs) # generate action from the policy
-                observation, reward, done, info = env_test.step(action) # execute action
+                observation, reward, done, _ = env_test.step(action) # execute action
                 obs = observation     # set history
                 return_ep += reward   # compute return
                 if done: break
@@ -63,7 +65,7 @@ def run_evaluations(policy               # input policy
             
             # increment the sufficient policy count if return exceeds given threshold
             # (note: at every step, 1 reward is produced in the environment)
-            if return_ep>=step_thresh:
+            if return_ep >= step_thresh:
                 suf_policy_count += 1
     
 
@@ -72,7 +74,12 @@ def run_evaluations(policy               # input policy
     # 2. 'avg. episodic return'
     # 3. maximum episodic return (across all evaluations)
     # 4. minimum episodic return (across all evaluations)
-    
-    return (suf_policy_count/(len(state_list)*simu_per_state))*100, (sum(ep_returns)/(len(state_list)*simu_per_state)), max_return, min_return 
+
+    avg_return = (sum(ep_returns)/(len(state_list)*simu_per_state))
+
+    if print_eval_summary:
+        print(f"Run: {iterr_num} - Evaluation results:\n - Avg. return: {avg_return}\n - Max return: {max_return}\n - Min return: {min_return}\n")
+
+    return (suf_policy_count/(len(state_list)*simu_per_state))*100, avg_return, max_return, min_return 
 
 #######################################

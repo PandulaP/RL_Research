@@ -81,7 +81,7 @@ def evaluate_preference(starting_state # starting state of roll-outs
             rand_act_noice =  np.array([[np.random.uniform(low = -.2,high=.2)]])
                                             
             # apply the action (custom environment accepts float actions)
-            observation, reward, done, info = env.step(np.clip(action_value + rand_act_noice,-1,1)) # clip action value to (-1,1) range
+            observation, reward, done, _ = env.step(np.clip(action_value + rand_act_noice,-1,1)) # clip action value to (-1,1) range
             
             # define the history variable to store the last observed state
             hist = observation 
@@ -95,7 +95,7 @@ def evaluate_preference(starting_state # starting state of roll-outs
                 
                 # sample next state using the label-ranking model (if TRUE)
                 if label_ranker: 
-                    observation, reward, done, info = env.step(policy.label_ranking_policy(hist))
+                    observation, reward, done, _ = env.step(policy.label_ranking_policy(hist))
                     
                     # replace current history with the observed state
                     hist = observation
@@ -103,7 +103,7 @@ def evaluate_preference(starting_state # starting state of roll-outs
                 
                 # sample next state using a random policy
                 else: 
-                    observation, reward, done, info = env.step(policy(env))
+                    observation, reward, done, _ = env.step(policy(env))
                     action_count+=1
 
                 # compute discounted-reward at each step of the roll-out and store the roll-out return
@@ -120,7 +120,7 @@ def evaluate_preference(starting_state # starting state of roll-outs
 
     # run a t-test to check whether the observed difference between average returns is significant
     # (unpaird t-tests: equal variance)
-    t_val, p_val = stats.ttest_ind(r['one'],r['two']) 
+    t_val, p_val = stats.ttest_ind(r['one'], r['two']) 
     
     # track output
     if tracking:
@@ -256,7 +256,7 @@ def train_model(train_data                  # collection of all preference data
         train_df_reduced.preference_label_vector = train_df_reduced.preference_label_vector.apply(lambda row: np.array(row).astype(np.float)) # convert all label vectors to float
         
         if show_dataset:
-            print(f'Training data samples: {train_df_reduced.shape[0]}')
+            print(f'\nTraining data samples: {train_df_reduced.shape[0]}')
             print(train_df_reduced.loc[:,['state_key', 'preference_label_vector']])
         
         ### preparing the training dataset for the neural network (LabelRanker) model ###
@@ -270,18 +270,17 @@ def train_model(train_data                  # collection of all preference data
         output_labels_normalized = output_labels_temp / row_sums[:, np.newaxis]
         output_labels = torch.from_numpy(output_labels_normalized) # convert to tensor
 
-        # generate the input state data tensors (feature data for the model)
-        # - this should only include pendulum-angle and pendulum-velocity
-        #input_states  = torch.from_numpy(np.array(train_df_reduced.state.apply(lambda x: [x[2].astype(float),x[3].astype(float)]).tolist())) # only select pole-position and pole-velocity
-        #input_states  = torch.from_numpy(np.array(train_df_reduced.state.apply(lambda x: [round(x[2].reshape(-1)[0],6).astype(float),round(x[3].reshape(-1)[0],6).astype(float)]).tolist())) # only select pole-position and pole-velocity
-        input_states  = torch.from_numpy(np.array(train_df_reduced.state.apply(lambda x: [x[2].reshape(-1)[0].astype(float),x[3].reshape(-1)[0].astype(float)]).tolist())) # only select pole-position and pole-velocity
+        # Generate the input state data tensors (feature data for the model)
+        #   This only includes 'pendulum-angle' and 'angular velocity'
+        #   State values are rounded; this seems to improve the performance
+        input_states  = torch.from_numpy(np.array(train_df_reduced.state.apply(lambda x: [round(x[2].reshape(-1)[0],5).astype(float), round(x[3].reshape(-1)[0],5).astype(float)]).tolist())) # only select pole-position and pole-velocity
 
         
         # create TensorDataset
         train_ds = TensorDataset(input_states , output_labels)
         
         # define the batch size
-        batch_size = batch_s #train_df_reduced.shape[1]
+        batch_size = batch_s 
         
         # define the data loader
         train_dl = DataLoader(train_ds
@@ -323,7 +322,8 @@ def train_model(train_data                  # collection of all preference data
     model = Model(input_states.shape[1], output_labels.shape[1], mod_layers)
 
     # define optimizer and loss
-    opt = torch.optim.SGD(model.parameters(), lr = l_rate)
+    #opt = torch.optim.SGD(model.parameters(), lr = l_rate)
+    opt = torch.optim.Adam(model.parameters(), lr = l_rate, weight_decay = 0.00001)
     loss_fn = F.mse_loss
 
     # list to store losses
@@ -332,7 +332,7 @@ def train_model(train_data                  # collection of all preference data
     # defining a function to train the model
     def fit(num_epochs, model, loss_fn, opt):
         
-        for epoch in range(num_epochs):
+        for _ in range(num_epochs):
             for xb,yb in train_dl:
 
                 # Generate predictions
