@@ -12,9 +12,6 @@ import matplotlib.pyplot as plt
 
 import itertools
 
-INIT_STATES = pd.read_csv('../data/input/init_state_sample_s_20.csv')
-NUM_SAMPLES = 20
-
 # generate a random action from a given environment
 def random_action(environment, seed=10):
     """ return a random action from the given environment. """
@@ -30,10 +27,10 @@ def partition_action_space(env_name:'string'
                            , n_actions:'int'):
     """function to partitions the action space of an environment into a given number of actions`"""
     
-    # initialize environment
+    # Initialize environment
     env = gym.make(env_name)
 
-    # partition the action space to a given number of actions
+    # Partition the action space to a given number of actions
     part_act_space = np.linspace(env.action_space.low[0,0]
                                  ,env.action_space.high[0,0],n_actions)
     
@@ -47,9 +44,12 @@ def evaluations_per_config(s_size
                            , runs_per_config = 10
                            , off_policy_explr = False
                            , env_name = 'CustomCartPole-v0'
+                           , init_state_path: str = None
                            , print_run_eval_plot = False
                            , rollout_tracking = False
                            , dataset_tracking = False
+                           , train_plot_tracking = False
+                           , eval_summary_tracking = False
                            ):
     
     #########################
@@ -57,6 +57,9 @@ def evaluations_per_config(s_size
 
     ## hyper-parameters ##
     env_name = env_name
+
+    INIT_STATES = pd.read_csv(init_state_path)
+    NUM_SAMPLES = INIT_STATES.shape[0]
 
     s_size = s_size             # initial state stample size
     n_actions = n_actions       # number of actions in the action space
@@ -79,16 +82,12 @@ def evaluations_per_config(s_size
     ## flags/triggers ##
 
     print_iterr = False                   # trigger to print progress bars of training iterations
-    print_states_cover = False            # trigger to print progress bars of visited states
-    print_rollouts = False                # trigger printing roll-out results
-    print_training_plot = False            # trigger printing the training loss of LabelRanker Model
-    print_eval_plot = True                # trigger printing the evaluation results
 
     #########################
 
     ### variable initialization ###
 
-    env = gym.make(env_name)   # create environment
+    #env = gym.make(env_name)   # create environment
     sample_states = INIT_STATES.values.reshape(NUM_SAMPLES,4,1,1)  # generate sample states
     act_space = partition_action_space(env_name = env_name, n_actions = n_actions) # partition the action space
     act_pairs = list(itertools.combinations(act_space,2)) # generate action-pairs from the partitioned action space
@@ -98,14 +97,20 @@ def evaluations_per_config(s_size
     # Initialize the LabelRanker model and epoch configs
     # Note: these configs were decided after testing different settings; there can be better/different choices
     if s_size < 49:
-        model_config = [50]
-        epch_config  = 500
+        model_config = [20]
+        epch_config  = 1000
+        l_rate_config = 0.001
+        batch_s_config = 5
     elif s_size >= 49 and s_size < 149:
         model_config = [100]
         epch_config  = 2000
+        l_rate_config = 0.001
+        batch_s_config = 5
     else:
         model_config  = [125]
         epch_config   = 2000
+        l_rate_config = 0.001
+        batch_s_config = 5
 
 
     # list to store results of the evaluation run
@@ -164,10 +169,10 @@ def evaluations_per_config(s_size
                                 , action_space = act_space
                                 , model_name   = model_name 
                                 , mod_layers   = model_config
-                                , batch_s      = 4
+                                , batch_s      = batch_s_config
                                 , n_epochs     = epch_config 
-                                , l_rate       = 0.1
-                                , show_train_plot = False
+                                , l_rate       = l_rate_config
+                                , show_train_plot = train_plot_tracking
                                 , show_dataset    = dataset_tracking
                                 )
 
@@ -216,10 +221,12 @@ def evaluations_per_config(s_size
 
 
             # evaluate the performance of the learned policy
-            pct_succ_policies, x, y, z = run_evaluations(target_policy
+            pct_succ_policies, _, _, _ = run_evaluations(target_policy
                                                         , sample_states
                                                         , simulations_per_state = eval_simu_per_state
                                                         , step_thresh = 1000 # steps needed for a sufficient policy
+                                                        , iterr_num = iterr
+                                                        , print_eval_summary = eval_summary_tracking
                                                        ) 
 
 
@@ -285,7 +292,8 @@ def evaluations_per_config(s_size
                            , 'SR': agg_pct_suff_policies})
 
         if print_iterr:
-            pbar.close()
+            #pbar.close()
+            pass
             
     # output the recorded evaluation results for the hyper-parameter configuration
     return run_results

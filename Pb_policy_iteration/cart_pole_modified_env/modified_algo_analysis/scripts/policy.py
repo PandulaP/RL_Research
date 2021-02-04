@@ -67,7 +67,8 @@ class Policy():
         # when action space is partitioned, return the corresponding action
         # - a uniform noise term is added to action signals to make all state transitions non-deterministic 
         # clip action value to (-1,1) range
-        return np.array([[np.clip(self.action_space[int(action)] + np.array(np.random.uniform(low = -.2,high=.2),dtype=float),-1,1)]])
-    
+        return np.array([[np.clip(self.action_space[int(action)] \
+                #+ np.array(np.random.uniform(low = -.2,high=.2),dtype=float) \
+                    ,-1,1)]])
 
 ########################################
