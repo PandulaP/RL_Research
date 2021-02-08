@@ -158,6 +158,8 @@ def train_model(train_data                  # collection of all preference data
                 , mod_layers = [10]         # model configuration
                 , n_epochs = 1000           # num. of epochs to train the model
                 , l_rate = 0.01             # learning rate for the optimization process  
+                , retrain_model = False     # whether to retrain the same model or not
+                , policy_iterr_count = None # policy iteration count
                 , show_train_plot = False   # flag to display the 'training-loss vs. epoch' plot
                 , show_dataset = False):    # flag to display the training dataset
     
@@ -290,7 +292,7 @@ def train_model(train_data                  # collection of all preference data
                              )
         
         
-    ### defining and training the neural network (LabelRanker) model ###        
+    ### Defining and training the neural network (LabelRanker) model ###        
     
     class Model(nn.Module):
 
@@ -305,8 +307,6 @@ def train_model(train_data                  # collection of all preference data
             for layer_dim in layers:
                 all_layers.append(nn.Linear(input_size, layer_dim))
                 all_layers.append(nn.LeakyReLU(inplace=True))
-                #all_layers.append(nn.BatchNorm1d(layer_dim))
-                #all_layers.append(nn.Dropout(p))
                 input_size = layer_dim
 
             all_layers.append(nn.Linear(layers[-1], output_label_len))
@@ -317,19 +317,10 @@ def train_model(train_data                  # collection of all preference data
             x = self.layers(state_vec)
             return x
 
-        
-    # create a NN model instance
-    model = Model(input_states.shape[1], output_labels.shape[1], mod_layers)
-
-    # define optimizer and loss
-    #opt = torch.optim.SGD(model.parameters(), lr = l_rate)
-    opt = torch.optim.Adam(model.parameters(), lr = l_rate, weight_decay = 0.00001)
-    loss_fn = F.mse_loss
-
-    # list to store losses
+    # List to store losses
     aggregated_losses = []
 
-    # defining a function to train the model
+    # Defining a function to train the model
     def fit(num_epochs, model, loss_fn, opt):
         
         for _ in range(num_epochs):
@@ -345,27 +336,78 @@ def train_model(train_data                  # collection of all preference data
                 opt.zero_grad()
 
             aggregated_losses.append(loss_fn(model(input_states.float()), output_labels.float()).detach().numpy())
-
-        #print('\nTraining loss: ', loss_fn(model(input_states.float()), output_labels.float()).detach().numpy(),'\n')
         
         # return training loss
         return loss_fn(model(input_states.float()), output_labels.float()).detach().numpy()
     
 
-    # train the model
-    epochs = n_epochs
-    loss_v = fit(epochs, model, loss_fn, opt)
-
-    # save the trained model
+    # Path to save/load model
     PATH = f"../data/output/models/{model_name}_pbpi_model.pt"
-    torch.save(model.state_dict(), PATH)
+
+    if retrain_model:
+
+        if policy_iterr_count == 1:
+
+            print(f'\nTraining iter:{policy_iterr_count}\n')
+
+            # Create a NN model instance
+            model = Model(input_states.shape[1], output_labels.shape[1], mod_layers)
+
+            # Define optimizer and loss
+            opt = torch.optim.Adam(model.parameters(), lr = l_rate, weight_decay = 0.0001)
+            loss_fn = F.mse_loss
+
+            # Train the model
+            epochs = n_epochs
+            loss_v = fit(epochs, model, loss_fn, opt)
+
+            # Save the trained model
+            torch.save(model.state_dict(), PATH)
+        
+        else:
+
+            print(f'\nRetraining iter:{policy_iterr_count}\n')
+
+            # Create a NN model instance
+            model = Model(input_states.shape[1], output_labels.shape[1], mod_layers)
+
+            # Define optimizer and loss
+            decayed_lr =  (l_rate/(5*policy_iterr_count))
+            opt = torch.optim.Adam(model.parameters(), lr = decayed_lr, weight_decay = 0.0001)
+            loss_fn = F.mse_loss
+
+            # Load the model
+            model.load_state_dict(torch.load(PATH))
+
+            # Train the model
+            epochs = n_epochs
+            loss_v = fit(epochs, model, loss_fn, opt)
+
+            # save the trained model
+            torch.save(model.state_dict(), PATH)
+
+    else:
+
+        # Create a NN model instance
+        model = Model(input_states.shape[1], output_labels.shape[1], mod_layers)
+
+        # Define optimizer and loss
+        opt = torch.optim.Adam(model.parameters(), lr = l_rate, weight_decay = 0.0001)
+        loss_fn = F.mse_loss
+
+        # Train the model
+        epochs = n_epochs
+        loss_v = fit(epochs, model, loss_fn, opt)
+
+        # save the trained model
+        torch.save(model.state_dict(), PATH)
     
     # plot the model loss
     if show_train_plot:
         plt.plot(range(epochs), aggregated_losses)
         plt.ylabel('Loss')
         plt.xlabel('epoch')
-        plt.title(f'Training samples: {train_df_reduced.shape[0]} | Training loss: {np.round(loss_v,5)}\n')
+        plt.title(f'Training samples: {train_df_reduced.shape[0]} | Training loss: {str(np.round(loss_v,5))}\n')
         plt.show()
 
     # set the model to evaluation mode and return it

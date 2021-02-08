@@ -76,9 +76,15 @@ def run_evaluations(policy               # input policy
     # 4. minimum episodic return (across all evaluations)
 
     avg_return = (sum(ep_returns)/(len(state_list)*simu_per_state))
+    pct_sr = (suf_policy_count/(len(state_list)*simu_per_state))*100
 
     if print_eval_summary:
-        print(f"Run: {iterr_num} - Evaluation results:\n - Avg. return: {avg_return}\n - Max return: {max_return}\n - Min return: {min_return}\n")
+        
+        print(f"Run: {iterr_num} - Evaluation results:\n \
+            - Avg. return : {avg_return}\n \
+            - Max. return : {max_return}\n \
+            - Min. return : {min_return}\n \
+            - Successful episodes : {pct_sr}% \n")
 
     return (suf_policy_count/(len(state_list)*simu_per_state))*100, avg_return, max_return, min_return 
 

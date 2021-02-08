@@ -42,6 +42,7 @@ def evaluations_per_config(s_size
                            , max_n_rollouts
                            , sig_lvl
                            , runs_per_config = 10
+                           , max_policy_iter_per_run = 10
                            , off_policy_explr = False
                            , env_name = 'CustomCartPole-v0'
                            , init_state_path: str = None
@@ -73,7 +74,7 @@ def evaluations_per_config(s_size
     ## task settings ##
 
     seed = 2                                  # set seed
-    max_iterr = 10                            # max. num. of policy iterations
+    max_iterr = max_policy_iter_per_run       # max. num. of policy iterations
     off_policy_exploration = off_policy_explr # trigger to use off-policy exploration [MY MODIFICATION]
     eval_simu_per_state = 100                 # number of evaluation runs from each initial starting state (evaluation)
     
@@ -172,6 +173,8 @@ def evaluations_per_config(s_size
                                 , batch_s      = batch_s_config
                                 , n_epochs     = epch_config 
                                 , l_rate       = l_rate_config
+                                , retrain_model = True if off_policy_exploration else False
+                                , policy_iterr_count = iterr
                                 , show_train_plot = train_plot_tracking
                                 , show_dataset    = dataset_tracking
                                 )
@@ -202,15 +205,15 @@ def evaluations_per_config(s_size
 
                 # Generate separate 'target' and 'behaviour' policies
                 # Target policy to be used in evaluations, and behaviour policy to generate roll-outs (training data)
-                target_policy = Policy(act_space, model, [1.0, 0.0]) # always select the highest ranked action
-                exp_policy = Policy(act_space, model, [0.5, 0.5])    # select the first two highest ranked actions w/ same prob. 
+                target_policy = Policy(act_space, model, [1.0, 0.0, 0.0]) # always select the highest ranked action
+                exp_policy = Policy(act_space, model, [0.5, 0.5, 0.0])    # select the first two highest ranked actions w/ same prob. 
 
             else:
 
                 # Set both 'target' and 'behaviour' policies to follow the optimal policy
                 # I.e., always select the highest ranked action
-                target_policy = Policy(act_space, model, [1.0, 0.0])
-                exp_policy = Policy(act_space, model, [1.0, 0.0])
+                target_policy = Policy(act_space, model, [1.0, 0.0, 0.0])
+                exp_policy = Policy(act_space, model, [1.0, 0.0, 0.0])
 
 
             # update the tot. # actions executed across all training iterations
