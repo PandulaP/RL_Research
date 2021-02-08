@@ -46,23 +46,23 @@ class Policy():
         ranked_action_idx = (-rd(preds.detach().numpy())).argsort()
 
         
-        ### return the selected action ###
+        ### Return the selected action ###
         
         # if there are more than 2 actions
         if len(self.action_space)>2:
             
             # compute the probabilities for the 3rd action onward
-            remain_probs = .00/len(ranked_action_idx[2:])
-            n_remain_actions = ranked_action_idx.shape[0]-2
+            #remain_probs = .00/len(ranked_action_idx[2:])
+            #n_remain_actions = ranked_action_idx.shape[0]-2
 
             # since we add random noise to action, policy becomes stochastic (even if we select the 1st ranked action always)
             # select one of the remaining actions 1% time
-            action = np.random.choice(ranked_action_idx,1 , p=[self.probs[0], self.probs[1]] + list(np.repeat(remain_probs,n_remain_actions)))[0]
-        
+            #action = np.random.choice(ranked_action_idx, size = 1 , p=[self.probs[0], self.probs[1]] + list(np.repeat(remain_probs,n_remain_actions)))[0]
+            action = np.random.choice(ranked_action_idx, size = 1 , p=[prob for prob in self.probs])[0]        
         else:
             
             # if there are only 2 actions: select highest preferred actions 95% and 5% of the time
-            action = np.random.choice(ranked_action_idx,1 , p=[self.probs[0], self.probs[1]])[0]
+            action = np.random.choice(ranked_action_idx, size=1 , p=[self.probs[0], self.probs[1]])[0]
         
         # when action space is partitioned, return the corresponding action
         # - a uniform noise term is added to action signals to make all state transitions non-deterministic 
