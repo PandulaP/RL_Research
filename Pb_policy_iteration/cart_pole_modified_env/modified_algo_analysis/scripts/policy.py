@@ -14,10 +14,11 @@ class Policy():
         - This Policy object takes a given neural network (LabelRanker) model and uses it to define a policy for the agent to follow
     """
     
-    def __init__(self, action_space, model, probs):
+    def __init__(self, action_space, model, probs, modified_algo_flag = False):
         self.action_space = action_space # action space of the current environment
         self.model = model               # trained NN (LabelRanker) model
         self.probs = probs               # list of probabilities for actions
+        self.modified_algo_flag = modified_algo_flag # Modified algorithm flag
         
     def label_ranking_policy(self,obs):
         """ Produces an action for a given state based on the LabelRanker model prediction
@@ -32,7 +33,7 @@ class Policy():
         # only select the pendulum-velocity and angle from the input state vector
         #state_obs = np.array([obs[2].reshape(-1)[0],obs[3].reshape(-1)[0]]) 
         #state_obs = np.array([round(obs[2].reshape(-1)[0],6),round(obs[3].reshape(-1)[0],6)]) # rounded input
-        state_obs = np.array([obs[2].reshape(-1)[0],obs[3].reshape(-1)[0]])
+        state_obs = np.array([round(obs[2].reshape(-1)[0],5), round(obs[3].reshape(-1)[0],5)])
         
         #state_obs = state_obs.reshape(-1,state_obs.shape[0]) # reshape to be a 2D array
         state_obs = torch.from_numpy(state_obs) # convert to a tensor
@@ -64,11 +65,16 @@ class Policy():
             # if there are only 2 actions: select highest preferred actions 95% and 5% of the time
             action = np.random.choice(ranked_action_idx, size=1 , p=[self.probs[0], self.probs[1]])[0]
         
-        # when action space is partitioned, return the corresponding action
-        # - a uniform noise term is added to action signals to make all state transitions non-deterministic 
-        # clip action value to (-1,1) range
-        return np.array([[np.clip(self.action_space[int(action)] \
-                #+ np.array(np.random.uniform(low = -.2,high=.2),dtype=float) \
-                    ,-1,1)]])
+        # When action space is partitioned, return the corresponding action
+        # A uniform noise term is added to action signals for the original algorithm 
+        # (to make all state transitions non-deterministic) 
+        #  Action values are clipped to be in the [-1,1] range
+
+        if self.modified_algo_flag:
+            return_action = np.array([[np.clip(self.action_space[int(action)],-1,1)]])
+        else:
+            return_action = np.array([[np.clip(self.action_space[int(action)] + np.array(np.random.uniform(low = -.2,high=.2),dtype=float),-1,1)]])
+       
+        return return_action
 
 ########################################

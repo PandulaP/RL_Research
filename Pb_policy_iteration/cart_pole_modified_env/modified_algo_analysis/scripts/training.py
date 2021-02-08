@@ -151,6 +151,7 @@ def evaluations_per_config(s_size
                                                                          , action_2       = np.array([[action_pair[1]]])
                                                                          , policy_in      = policy
                                                                          , label_ranker   = label_r_flag
+                                                                         , modified_algo  = True if off_policy_exploration else False
                                                                          , n_rollouts     = n_rollouts
                                                                          , p_sig          = sig_lvl
                                                                          , tracking       = rollout_tracking
@@ -205,8 +206,8 @@ def evaluations_per_config(s_size
 
                 # Generate separate 'target' and 'behaviour' policies
                 # Target policy to be used in evaluations, and behaviour policy to generate roll-outs (training data)
-                target_policy = Policy(act_space, model, [1.0, 0.0, 0.0]) # always select the highest ranked action
-                exp_policy = Policy(act_space, model, [0.5, 0.5, 0.0])    # select the first two highest ranked actions w/ same prob. 
+                target_policy = Policy(act_space, model, [1.0, 0.0, 0.0], modified_algo_flag = True) # always select the highest ranked action
+                exp_policy = Policy(act_space, model, [0.5, 0.5, 0.0], modified_algo_flag = True)    # select the first two highest ranked actions w/ same prob. 
 
             else:
 

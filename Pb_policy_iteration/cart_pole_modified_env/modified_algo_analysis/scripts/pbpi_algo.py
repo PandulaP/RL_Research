@@ -33,6 +33,7 @@ def evaluate_preference(starting_state # starting state of roll-outs
                         , n_rollouts = 20         # number of roll-outs to generate per action
                         , max_rollout_len = 1500  # maximum length of a roll-out
                         , label_ranker = False    # whether to use the label-ranking model or not
+                        , modified_algo = False   # Whether evaluations run for modified algorithm or not
                         , p_sig = 0.05            # p-value to use for t-test (to compare returns of roll-outs)
                         , tracking = False
                         ):
@@ -77,9 +78,13 @@ def evaluate_preference(starting_state # starting state of roll-outs
             env = gym.make(environment_name)
             env.reset(init_state=s_init) # modified env.reset() in custom env: it accepts a starting state
 
-            # genereate random noice for action
-            rand_act_noice =  np.array([[np.random.uniform(low = -.2,high=.2)]])
-                                            
+            # Genereate random noice for action
+            if modified_algo:
+                # Add a very small noise value for the modified algorithm
+                rand_act_noice =  np.array([[np.random.uniform(low = -.00002,high=.00002)]])
+            else:
+                 rand_act_noice =  np.array([[np.random.uniform(low = -.2,high=.2)]]) 
+
             # apply the action (custom environment accepts float actions)
             observation, reward, done, _ = env.step(np.clip(action_value + rand_act_noice,-1,1)) # clip action value to (-1,1) range
             
