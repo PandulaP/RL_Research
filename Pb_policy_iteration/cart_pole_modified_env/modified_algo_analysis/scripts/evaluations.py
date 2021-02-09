@@ -80,11 +80,11 @@ def run_evaluations(policy               # input policy
 
     if print_eval_summary:
         
-        print(f"Run: {iterr_num} - Evaluation results:\n \
-            - Avg. return : {avg_return}\n \
-            - Max. return : {max_return}\n \
-            - Min. return : {min_return}\n \
-            - Successful episodes : {pct_sr}% \n")
+        print(f"\nPolicy Iteration: {iterr_num} - Evaluation results:\n \
+                        - Avg. return : {avg_return}\n \
+                        - Max. return : {max_return}\n \
+                        - Min. return : {min_return}\n \
+                        - Successful episodes : {pct_sr}% \n")
 
     return (suf_policy_count/(len(state_list)*simu_per_state))*100, avg_return, max_return, min_return 
 

@@ -81,9 +81,9 @@ def evaluate_preference(starting_state # starting state of roll-outs
             # Genereate random noice for action
             if modified_algo:
                 # Add a very small noise value for the modified algorithm
-                rand_act_noice =  np.array([[np.random.uniform(low = -.00002,high=.00002)]])
+                rand_act_noice =  np.array([[np.random.uniform(low = -.000000001, high=.000000001)]])
             else:
-                 rand_act_noice =  np.array([[np.random.uniform(low = -.2,high=.2)]]) 
+                rand_act_noice =  np.array([[np.random.uniform(low = -.2, high=.2)]]) 
 
             # apply the action (custom environment accepts float actions)
             observation, reward, done, _ = env.step(np.clip(action_value + rand_act_noice,-1,1)) # clip action value to (-1,1) range
@@ -353,7 +353,8 @@ def train_model(train_data                  # collection of all preference data
 
         if policy_iterr_count == 1:
 
-            print(f'\nTraining iter:{policy_iterr_count}\n')
+            if show_train_plot:
+                print(f'\nModified-algo: Training iter:{policy_iterr_count}\n')
 
             # Create a NN model instance
             model = Model(input_states.shape[1], output_labels.shape[1], mod_layers)
@@ -370,8 +371,8 @@ def train_model(train_data                  # collection of all preference data
             torch.save(model.state_dict(), PATH)
         
         else:
-
-            print(f'\nRetraining iter:{policy_iterr_count}\n')
+            if show_train_plot:
+                print(f'\nModified-algo: Retraining iter:{policy_iterr_count}\n')
 
             # Create a NN model instance
             model = Model(input_states.shape[1], output_labels.shape[1], mod_layers)
