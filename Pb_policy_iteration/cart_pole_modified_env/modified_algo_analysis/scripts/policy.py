@@ -31,10 +31,8 @@ class Policy():
 
 
         # only select the pendulum-velocity and angle from the input state vector
-        #state_obs = np.array([obs[2].reshape(-1)[0],obs[3].reshape(-1)[0]]) 
-        #state_obs = np.array([round(obs[2].reshape(-1)[0],6),round(obs[3].reshape(-1)[0],6)]) # rounded input
-        state_obs = np.array([round(obs[2].reshape(-1)[0],5), round(obs[3].reshape(-1)[0],5)])
-        
+        #state_obs = np.array([round(obs[2].reshape(-1)[0],5), round(obs[3].reshape(-1)[0],5)]) # Rounded input
+        state_obs = np.array([obs[2].reshape(-1)[0], obs[3].reshape(-1)[0]])        
         #state_obs = state_obs.reshape(-1,state_obs.shape[0]) # reshape to be a 2D array
         state_obs = torch.from_numpy(state_obs) # convert to a tensor
 

@@ -46,7 +46,7 @@ def evaluations_per_config(s_size
                            , off_policy_explr = False
                            , env_name = 'CustomCartPole-v0'
                            , init_state_path: str = None
-                           , print_run_eval_plot = False
+                           , experiment_eval_plot = False
                            , rollout_tracking = False
                            , dataset_tracking = False
                            , train_plot_tracking = False
@@ -93,7 +93,7 @@ def evaluations_per_config(s_size
     act_space = partition_action_space(env_name = env_name, n_actions = n_actions) # partition the action space
     act_pairs = list(itertools.combinations(act_space,2)) # generate action-pairs from the partitioned action space
 
-    print(f'\nCurrently evaluated configs:\n '+  param_config_string, end='\r')
+    print(f'\nCurrently evaluated configs:\n '+  param_config_string)
 
     # Initialize the LabelRanker model and epoch configs
     # Note: these configs were decided after testing different settings; there can be better/different choices
@@ -203,14 +203,12 @@ def evaluations_per_config(s_size
 
             # Derive a new policy using the trained model
             if off_policy_exploration:
-
                 # Generate separate 'target' and 'behaviour' policies
                 # Target policy to be used in evaluations, and behaviour policy to generate roll-outs (training data)
                 target_policy = Policy(act_space, model, [1.0, 0.0, 0.0], modified_algo_flag = True) # always select the highest ranked action
                 exp_policy = Policy(act_space, model, [0.5, 0.5, 0.0], modified_algo_flag = True)    # select the first two highest ranked actions w/ same prob. 
 
             else:
-
                 # Set both 'target' and 'behaviour' policies to follow the optimal policy
                 # I.e., always select the highest ranked action
                 target_policy = Policy(act_space, model, [1.0, 0.0, 0.0])
@@ -270,18 +268,18 @@ def evaluations_per_config(s_size
             iterr += 1
 
         # plot evaluation results of the training run 
-        if print_run_eval_plot: 
+        if experiment_eval_plot: 
             
             plt.clf()
             plt.cla()
             plt.close()
 
-            fig, ax2 = plt.subplots(figsize =(6,4))
+            fig, ax2 = plt.subplots(figsize = (6,4))
             ax2.plot(action_count_li, agg_pct_suff_policies, 'm-.', label = 'success rate')
             ax2.set_xlabel('# actions')
             ax2.set_ylabel('Pct. of sufficient policies')
             ax2.legend(loc='upper left')
-            plt.title(f'Evaluation Results | Run: {run+1}')
+            plt.title(f'Experiment Evaluation Results | Run: {run+1}')
 
             plt.savefig(f'../data/output/train_imgs/{model_name}_{run}.png') # save the evaluation image
             plt.show() 
