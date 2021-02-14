@@ -1,5 +1,8 @@
 ### PbPI modified algorithm analysis
 
-Modified algorithm is created by introducing an 'exploration' step during the training data (rollout) generation step in the PbPI algorithm.
+I generate the modified version of the PbPI algorithm by introducing below properties:
+- Implement an 'exploration' step during the training data (rollout) generation phase,
+- Retrain the same LabelRanker NN model across different policy iterations.
 
-In this section, I try to understand why this is the case and run analyses and experomits to find any possible explanations.
+
+This section contains the analyses and experiments conducted to better understand why the modified algorithm works better than the original algorithm as well as how better the modified algorithm perform better overall.
