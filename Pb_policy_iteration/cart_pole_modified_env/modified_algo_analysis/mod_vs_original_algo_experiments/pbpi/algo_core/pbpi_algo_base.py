@@ -18,7 +18,9 @@ import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 
 import matplotlib.pyplot as plt
-import seaborn as sns
+
+import warnings
+warnings.filterwarnings('ignore')
 
 ########################################
 

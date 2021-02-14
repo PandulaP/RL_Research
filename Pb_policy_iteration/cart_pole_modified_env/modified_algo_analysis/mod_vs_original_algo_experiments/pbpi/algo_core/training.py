@@ -80,7 +80,7 @@ def evaluations_per_config(s_size
     off_policy_exploration = off_policy_explr # trigger to use off-policy exploration [MY MODIFICATION]
     eval_simu_per_state = 100                 # number of evaluation runs from each initial starting state (evaluation)
     
-    method_name = 'Mod_algo' if off_policy_explr else 'Original_algo'                       # string to store whether modified/original algo is running
+    method_name = 'Modified_algo' if off_policy_explr else 'Original_algo'                  # string to store whether modified/original algo is running
     model_name = f'{method_name}_CartPole_{s_size}_{n_actions}_{n_rollouts}_{sig_lvl}'      # name for the saved LabelRanker model
 
     ## flags/triggers ##
@@ -99,7 +99,7 @@ def evaluations_per_config(s_size
 
     # Initialize the LabelRanker model and epoch configs
     # Note: these configs were decided after testing different settings; there can be better/different choices
-    if s_size < 100:
+    if s_size < 1000:
         model_config = [20]
         epch_config  = 1000
         l_rate_config = 0.001
