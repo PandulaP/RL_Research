@@ -16,7 +16,7 @@ configs = { 'CONFIG_NO': 10
           , 'S': [N_STATES]
           , 'Actions' : [3]
           , 'Roll-outs': [100]
-          , 'Significance' : [0.1, 0.05, 0.025]
+          , 'Significance' : [0.1]
           }
 
 algorithm = ALGO_TYPE['original']
