@@ -12,14 +12,14 @@ ALGO_TYPE = {'original': {'name': 'original', 'exploration': False}
 # Configs to test
 N_STATES = 100
 
-configs = { 'CONFIG_NO': 10
+configs = { 'CONFIG_NO': 11
           , 'S': [N_STATES]
           , 'Actions' : [3]
           , 'Roll-outs': [100]
-          , 'Significance' : [0.1]
+          , 'Significance' : [0.05]
           }
 
-algorithm = ALGO_TYPE['modified']
+algorithm = ALGO_TYPE['original']
 
 ############################################
 ############################################
