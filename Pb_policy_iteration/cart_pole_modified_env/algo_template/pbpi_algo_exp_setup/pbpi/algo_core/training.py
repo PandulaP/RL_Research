@@ -45,14 +45,16 @@ def evaluations_per_config(s_size
                            , sig_lvl
                            , runs_per_config = 10
                            , max_policy_iter_per_run = 10
+                           , eval_runs_per_state = 100
                            , off_policy_explr = False
                            , env_name = 'CustomCartPole-v0'
                            , init_state_path: str = None
-                           , show_experiment_eval_plot = False
+                           , show_experiment_run_eval_summary_plot = False
                            , rollout_tracking = False
                            , dataset_tracking = False
                            , train_plot_tracking = False
                            , eval_summary_tracking = False
+                           , policy_behaviour_tracking = False
                            ):
     
     #########################
@@ -83,7 +85,7 @@ def evaluations_per_config(s_size
     seed = 2                                  # set seed
     max_iterr = max_policy_iter_per_run       # max. num. of policy iterations
     off_policy_exploration = off_policy_explr # trigger to use off-policy exploration [MY MODIFICATION]
-    eval_simu_per_state = 100                 # number of evaluation runs from each initial starting state (evaluation)
+    eval_simu_per_state = eval_runs_per_state # number of evaluation runs from each initial starting state (evaluation)
     
     method_name = 'Modified_algo' if off_policy_explr else 'Original_algo'                  # string to store whether modified/original algo is running
     model_name = f'{method_name}_CartPole_{s_size}_{n_actions}_{n_rollouts}_{sig_lvl}'      # name for the saved LabelRanker model
@@ -104,7 +106,7 @@ def evaluations_per_config(s_size
 
     # Initialize the LabelRanker model and epoch configs
     # Note: these configs were decided after testing different settings; there can be better/different choices
-    if s_size < 1000:
+    if s_size < 10000:
         model_config = [20]
         epch_config  = 1000
         l_rate_config = 0.001
@@ -212,14 +214,24 @@ def evaluations_per_config(s_size
             if off_policy_exploration:
                 # Generate separate 'target' and 'behaviour' policies
                 # Target policy to be used in evaluations, and behaviour policy to generate roll-outs (training data)
-                target_policy = Policy(act_space, model, [1.0, 0.0, 0.0], modified_algo_flag = True) # always select the highest ranked action
-                exp_policy = Policy(act_space, model, [0.5, 0.5, 0.0], modified_algo_flag = True)    # select the first two highest ranked actions w/ same prob. 
+                
+                # If there are more than two actions, assign zero probability to remaining actions
+                if len(act_space)>2:
+                    prob_fill =  np.repeat(0,len(act_space)-2)
+                    
+                target_policy = Policy(act_space, model, [1.0, 0.0]+list(prob_fill), modified_algo_flag = True) # always select the highest ranked action
+                exp_policy = Policy(act_space, model, [0.5, 0.5]+list(prob_fill), modified_algo_flag = True)    # select the first two highest ranked actions w/ same prob. 
 
             else:
                 # Set both 'target' and 'behaviour' policies to follow the optimal policy
                 # I.e., always select the highest ranked action
-                target_policy = Policy(act_space, model, [1.0, 0.0, 0.0])
-                exp_policy = Policy(act_space, model, [1.0, 0.0, 0.0])
+                
+                # If there are more than two actions, assign zero probability to remaining actions
+                if len(act_space)>2:
+                    prob_fill =  np.repeat(0,len(act_space)-2)
+
+                target_policy = Policy(act_space, model, [1.0, 0.0]+list(prob_fill))
+                exp_policy = Policy(act_space, model, [1.0, 0.0]+list(prob_fill))
 
 
             # update the tot. # actions executed across all training iterations
@@ -236,6 +248,9 @@ def evaluations_per_config(s_size
                                                         , step_thresh = 1000 # steps needed for a sufficient policy
                                                         , iterr_num = iterr
                                                         , print_eval_summary = eval_summary_tracking
+                                                        , print_policy_behaviour = policy_behaviour_tracking
+                                                        , model_name_input =  model_name
+                                                        , experiment_run_input = run+1
                                                        ) 
 
 
@@ -283,7 +298,7 @@ def evaluations_per_config(s_size
         plt.title(f'Experiment Evaluation Results | Run: {run+1}')
         plt.savefig(f_paths.paths['eval_plot_output'] + f'{model_name}_{run+1}.png') # save the evaluation image
 
-        if show_experiment_eval_plot: 
+        if show_experiment_run_eval_summary_plot: 
             plt.show() 
         
         # store the evaluation results of the training run
