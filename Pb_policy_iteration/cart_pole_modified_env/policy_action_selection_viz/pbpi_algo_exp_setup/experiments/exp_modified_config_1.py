@@ -44,22 +44,26 @@ if __name__ == '__main__':
             for sig_lvl in configs['Significance']:
 
                 run_results = evaluations_per_config(s_size          = sample_size
+                                                    #, init_state_path       = configs['init_state_path'] # Use a pre-designed init state configs   
                                                     , n_actions      = configs['Actions'][0]
                                                     , max_n_rollouts = rollout_max
                                                     , sig_lvl        = sig_lvl
 
-                                                    , max_policy_iter_per_run = 10
-                                                    , runs_per_config         = 10
-                                                    
-                                                    , off_policy_explr = EXPLORE_LOGIC
+                                                    , max_policy_iter_per_run = 10 # Maximum number of policy iterations per experiment
+                                                    , runs_per_config         = 10 # Number of experiments per one parameter config
 
-                                                    , rollout_tracking          = False
-                                                    , dataset_tracking          = False
-                                                    , train_plot_tracking       = False
-                                                    , eval_summary_tracking     = False 
-                                                    , show_experiment_eval_plot = False
+                                                    , eval_runs_per_state     = 100 # Episodes to generate from each init. state (during evaluation)
                                                     
-                                                    , init_state_path       = configs['init_state_path']
+                                                    , off_policy_explr = EXPLORE_LOGIC # What algorithm to use
+
+                                                    , rollout_tracking          = False # Show rollout info.
+                                                    , dataset_tracking          = False # Show train dataset
+
+                                                    , train_plot_tracking       = False # Show model training plot
+                                                    , eval_summary_tracking     = False # Show a policy performance summary of evaluation runs
+                                                    , policy_behaviour_tracking = False # Show/store policy action selections vs. pendulum angle plot
+
+                                                    , show_experiment_run_eval_summary_plot = False # Show SR vs. action no. plot of exp. run
                                                     )
 
                 agg_results.append(run_results)
@@ -74,5 +78,4 @@ if __name__ == '__main__':
         results_dfs.append(pd.DataFrame(result))
 
     results_df = pd.concat(results_dfs)
-
     results_df.to_excel(f"eval_results/{ALGO_NAME}_experiment_results_para_config_{configs['CONFIG_NO']}.xlsx", index=False)
