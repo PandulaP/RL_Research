@@ -1,0 +1,1 @@
+### Analysis done to ensure that the designed environment acts as desired
