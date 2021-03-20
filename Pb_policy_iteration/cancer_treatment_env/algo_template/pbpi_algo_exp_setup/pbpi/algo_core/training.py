@@ -33,8 +33,8 @@ def partition_action_space(env_name:'string'
     env = gym.make(env_name)
 
     # Partition the action space to a given number of actions
-    part_act_space = np.linspace(env.action_space.low[0,0]
-                                 ,env.action_space.high[0,0],n_actions)
+    part_act_space = np.linspace(env.action_space.low[0]
+                                 ,env.action_space.high[0], n_actions)
     
     return part_act_space
 
@@ -47,7 +47,7 @@ def evaluations_per_config(s_size
                            , max_policy_iter_per_run = 10
                            , eval_runs_per_state = 100
                            , off_policy_explr = False
-                           , env_name = 'CustomCartPole-v0'
+                           , env_name = 'ChemoSimulation-v0'
                            , init_state_path: str = None
                            , show_experiment_run_eval_summary_plot = False
                            , rollout_tracking = False
@@ -156,8 +156,8 @@ def evaluations_per_config(s_size
 
                     # generate preference data & executed num. of actions in each action pair evaluation step
                     preference_out, actions_per_pair = evaluate_preference(starting_state = state
-                                                                         , action_1       = np.array([[action_pair[0]]])
-                                                                         , action_2       = np.array([[action_pair[1]]])
+                                                                         , action_1       = action_pair[0]
+                                                                         , action_2       = action_pair[1]
                                                                          , policy_in      = policy
                                                                          , label_ranker   = label_r_flag
                                                                          , modified_algo  = True if off_policy_exploration else False
