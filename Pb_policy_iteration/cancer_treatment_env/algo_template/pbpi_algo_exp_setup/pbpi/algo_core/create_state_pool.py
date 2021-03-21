@@ -11,10 +11,12 @@ from pathlib import Path
 
 ###################################################
 
-def create_initial_state_set(sample_size:int):
+def create_initial_state_set(sample_size:int, seed = 16):
 
+    np.random.seed(seed)
+    
     # Initial patient set
-    tumor_size_init, toxicity_init = np.random.uniform(low=0, high=2, size = (2, num_samples))
+    tumor_size_init, toxicity_init = np.random.uniform(low=0, high=2, size = (2, sample_size))
     init_patients = [(t_size, toxicity) for t_size, toxicity in zip(tumor_size_init,toxicity_init)]
     
     return init_patients
