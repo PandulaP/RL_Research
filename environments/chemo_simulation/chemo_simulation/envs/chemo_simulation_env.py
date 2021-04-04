@@ -151,7 +151,7 @@ class ChemoSimulationEnv(gym.Env):
         # Check for termination condition
         # As of now, there is no termination condition in place
         # Prob. death == 1
-        done = bool(p_death > self.death_prop_threshold )
+        done = bool(p_death >= self.death_prop_threshold )
     
         if not done:
             reward = 1.0
