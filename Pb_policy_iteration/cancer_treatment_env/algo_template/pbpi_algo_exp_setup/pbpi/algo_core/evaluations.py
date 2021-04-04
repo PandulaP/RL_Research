@@ -21,7 +21,6 @@ def run_evaluations(policy               # input policy
                     , print_policy_behaviour = False # Whether to plot action selection vs. pendulum angle
                     , model_name_input     = None # Name of the used LabelRanker model
                     , experiment_run_input = None # At which experiment run the evaluation was called at
-                    , seed = 16
                    ):  
                    
     """
@@ -34,8 +33,12 @@ def run_evaluations(policy               # input policy
 
     simu_per_state = simulations_per_state
 
-    # Create 200 virtual patients
-    INIT_STATES = create_initial_state_set(virtual_patients, seed = seed)
+    this = 51#np.random.randint(100)
+
+    print(f"\nEvaluation 200 patient generation seed is: {this}\n")
+
+    # Create 200 virtual patients | new set of patients generated in each evaluation
+    INIT_STATES = create_initial_state_set(virtual_patients, seed = this)
         
     # create an environment instance
     env_test = gym.make(env_name)
@@ -154,7 +157,7 @@ def run_evaluations(policy               # input policy
 
                 if level == 'rand':
                     # Run treatment for 6 months
-                    for _ in range(7):
+                    for _ in range(sim_episode_length):
                         obs, reward, done, p_death = env.step(np.array([np.random.choice(np.array([0.1,0.4,0.7,1.]))]))
                     
                         obs_dic[level].append(obs)
@@ -165,7 +168,7 @@ def run_evaluations(policy               # input policy
 
                 else:
                     # Run treatment for 6 months
-                    for _ in range(7):
+                    for _ in range(sim_episode_length):
                         obs, reward, done, p_death = env.step(dosage)
                         
                         obs_dic[level].append(obs)
@@ -231,7 +234,6 @@ def run_evaluations(policy               # input policy
         plot_df_summary = plot_df_summary.merge(right = pdeath_df
                                                 , right_index=True
                                                 , left_index=True)
-        plot_df_summary
 
         # Join learned policy performance
         plot_df_summary = pd.concat([plot_df_summary, learned_policy_metrics_df])  
@@ -288,7 +290,7 @@ def run_evaluations(policy               # input policy
 
 
 
-        ax[1].set_title ('Probability of Death at Treatment End')
+        ax[1].set_title ('Average probability of death by treatment-type')
         ax[1].set_ylabel('Probability of death')
         ax[1].set_xlabel('Treatment type')
         plt.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.png') # save the evaluation image

@@ -59,7 +59,7 @@ def evaluations_per_config(s_size
                            , train_plot_tracking = False
                            , eval_summary_tracking = False
                            , policy_behaviour_tracking = False
-                           , set_seed = 16
+                           , set_seed = 10
                            ):
     
     #########################
@@ -68,12 +68,16 @@ def evaluations_per_config(s_size
     ## hyper-parameters ##
     env_name = env_name
 
+    this = 51#np.random.randint(100)
+
     # Load custom initial state data if provided
     if init_state_path is not None:
         INIT_STATES = pd.read_csv(init_state_path)
     else:
-        INIT_STATES = create_initial_state_set(s_size, seed = set_seed)
+        INIT_STATES = create_initial_state_set(s_size, seed = this)
     
+    print(f"\nState generation seed is {this}\n")
+
     NUM_SAMPLES = len(INIT_STATES)
 
     s_size = s_size             # initial state stample size
@@ -99,9 +103,9 @@ def evaluations_per_config(s_size
 
     print_iterr = False                   # trigger to print progress bars of training iterations
 
-    #########################
+    ###############################
 
-    ### variable initialization ###
+    ### Variable initialization ###
 
     sample_states = np.array(INIT_STATES).reshape(NUM_SAMPLES,2)  # generate sample states
     act_space = partition_action_space(env_name = env_name, n_actions = n_actions, fixed=True) # partition the action space
@@ -112,8 +116,8 @@ def evaluations_per_config(s_size
     # Initialize the LabelRanker model and epoch configs
     # Note: these configs were decided after testing different settings; there can be better/different choices
     if s_size < 10000:
-        model_config = [10, 10]
-        epch_config  = 1000
+        model_config = [50]
+        epch_config  = 2000
         l_rate_config = 0.001
         batch_s_config = 10
     # elif s_size >= 49 and s_size < 149:
@@ -263,7 +267,6 @@ def evaluations_per_config(s_size
                                                         , print_policy_behaviour = policy_behaviour_tracking
                                                         , model_name_input =  model_name
                                                         , experiment_run_input = run+1
-                                                        , seed = set_seed
                                                        ) 
 
 

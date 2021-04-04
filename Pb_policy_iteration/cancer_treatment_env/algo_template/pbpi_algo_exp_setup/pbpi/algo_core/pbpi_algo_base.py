@@ -40,7 +40,7 @@ def evaluate_preference(starting_state # starting state of roll-outs
                         , environment_name = 'ChemoSimulation-v0'   # name of the environment
                         #, discount_fac = 1        # discounting factor
                         , n_rollouts = 10         # number of roll-outs to generate per action
-                        , max_rollout_len = 7     # maximum length of a roll-out
+                        , max_rollout_len = 6     # maximum length of a roll-out
                         , label_ranker = False    # whether to use the label-ranking model or not
                         , modified_algo = False   # Whether evaluations run for modified algorithm or not
                         , p_sig = 0.1            # p-value to use for t-test (to compare returns of roll-outs)
@@ -111,7 +111,7 @@ def evaluate_preference(starting_state # starting state of roll-outs
 
             # Follow the given policy to generate a roll-out trajectory 
             traj_len = 1
-            while traj_len < max_traj_len and not done: 
+            while traj_len <= max_traj_len and not done: 
                                 
                 # Sample next state using the label-ranking model (if TRUE)
                 if label_ranker: 
