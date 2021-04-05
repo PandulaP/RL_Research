@@ -135,7 +135,7 @@ def run_evaluations(policy               # input policy
 
         melted_eval_df = melted_eval_df.melt(id_vars='Action'
                                             , var_name = 'state_variable'
-                                            , value_name='vals')
+                                            , value_name = 'vals')
 
         dis_p = sns.displot(x = 'vals'
                         , col = 'state_variable'
@@ -152,21 +152,26 @@ def run_evaluations(policy               # input policy
         dis_p.fig.suptitle('Actions vs. Pendulum angle & Angular Velocity', fontsize= 10)
         dis_p.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_bhvior_1.png') # save the evaluation image
 
-        j_plot = sns.jointplot(data = eval_df
-                            , x = "pendulum_angle"
-                            , y = "angular_velocity"
-                            , hue = "Action"
-                            , hue_order = sorted(eval_df.Action.unique(), reverse=True)
-                            , kind = "kde"
-                            , height = 7
-                            )
+        try:
+            j_plot = sns.jointplot(data = eval_df
+                                , x = "pendulum_angle"
+                                , y = "angular_velocity"
+                                , hue = "Action"
+                                , hue_order = sorted(eval_df.Action.unique(), reverse=True)
+                                , kind = "kde"
+                                , height = 7
+                                )
 
-        j_plot.fig.suptitle('Pendulum angle & Angular Velocity', fontsize= 10)
-        j_plot.fig.subplots_adjust(top=.93) 
-        j_plot.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_bhvior_2.png') # save the evaluation image
-        
-        #plt.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.png') # save the evaluation image
-        plt.show()        
+            j_plot.fig.suptitle('Pendulum angle & Angular Velocity', fontsize= 10)
+            j_plot.fig.subplots_adjust(top=.93) 
+            j_plot.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_bhvior_2.png') # save the evaluation image
+            
+            #plt.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.png') # save the evaluation image
+            plt.show()
+
+        except:
+            print(f"\nCan't create joint-plot: Matrix is not positive definite!\n")
+            pass
         
         #eval_df.to_csv(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.csv', index=False)
         print(f"\nPolicy Iteration: {iterr_num} - Length of the evaluation episode: {ret_ep} (init. state: {[round(val,2) for val in starting_state]})\n")
