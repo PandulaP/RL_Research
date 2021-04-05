@@ -81,9 +81,10 @@ def run_evaluations(policy               # input policy
     # Evaluate the policy performance on the neutral starting state, i.e., [0,0,0,0]
     if print_policy_behaviour:
 
-        # Create placeholders for the pendulum angle and action values
+        # Create placeholders for the pendulum angle, angular velocity and action values
         act_vals = []
         pend_angle_vals = []
+        angular_vel_vals = []
 
         # Initialize the environment to starting state
         # Randomly set the initial pendulum value as U[-.1,.1)
@@ -97,6 +98,7 @@ def run_evaluations(policy               # input policy
         for _ in range(1001):
 
             pend_angle_vals.append(obs.reshape(-1)[2]) # append the new pendulum angle value
+            angular_vel_vals.append(obs.reshape(-1)[3]) # append the new angular veloocity value
 
             a = policy.label_ranking_policy(obs) # generate action from the policy
             obs, r, terminate, _ = env_test.step(a) # execute action
@@ -109,6 +111,7 @@ def run_evaluations(policy               # input policy
 
         # Create a dataframe with pendulum angle values and executed actions
         eval_df = pd.DataFrame({'pendulum_angle': pend_angle_vals
+                                , 'angular_velocity': angular_vel_vals
                                 , 'act_vals': act_vals})
         
         # Add evaluation reward to dataframe
@@ -128,22 +131,45 @@ def run_evaluations(policy               # input policy
 
         eval_df.loc[:, 'Action'] = eval_df.act_vals.apply(lambda val: recode_act_val(val))
 
-        g = sns.displot(x = 'pendulum_angle'
-                        , row='Action'
-                        , data = eval_df
+        melted_eval_df = eval_df.drop(columns='act_vals')
+
+        melted_eval_df = melted_eval_df.melt(id_vars='Action'
+                                            , var_name = 'state_variable'
+                                            , value_name='vals')
+
+        dis_p = sns.displot(x = 'vals'
+                        , col = 'state_variable'
+                        , row = 'Action'
+                        , data = melted_eval_df
                         , bins = 100
                         , aspect = 2
                         , height = 3
-                        , kde =True).set(xlabel = 'Pendulum Angle')
+                        , kde =True)#.set(xlabel = 'Pendulum Angle')
 
-        g.map(plt.axvline, x=0, c='red')
-        g.fig.subplots_adjust(top=.93) 
-        g.fig.suptitle('Actions vs. Pendulum angle', fontsize= 10)
-        plt.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.png') # save the evaluation image
+
+        dis_p.map(plt.axvline, x=0, c='red')
+        dis_p.fig.subplots_adjust(top=.93) 
+        dis_p.fig.suptitle('Actions vs. Pendulum angle & Angular Velocity', fontsize= 10)
+        dis_p.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_bhvior_1.png') # save the evaluation image
+
+        j_plot = sns.jointplot(data = eval_df
+                            , x = "pendulum_angle"
+                            , y = "angular_velocity"
+                            , hue = "Action"
+                            , hue_order = sorted(eval_df.Action.unique(), reverse=True)
+                            , kind = "kde"
+                            , height = 7
+                            )
+
+        j_plot.fig.suptitle('Pendulum angle & Angular Velocity', fontsize= 10)
+        j_plot.fig.subplots_adjust(top=.93) 
+        j_plot.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_bhvior_2.png') # save the evaluation image
+        
+        #plt.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.png') # save the evaluation image
         plt.show()        
         
         #eval_df.to_csv(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.csv', index=False)
-        print(f"\nPolicy Iteration: {iterr_num} - Length of the evaluation episode: {ret_ep} (init. state: {[round(val,2) for val in starting_state]})")
+        print(f"\nPolicy Iteration: {iterr_num} - Length of the evaluation episode: {ret_ep} (init. state: {[round(val,2) for val in starting_state]})\n")
 
     # Evaluation metric returns
     # 1. % sufficient policy counts (total sufficient policies/ total # evaluation runs)
