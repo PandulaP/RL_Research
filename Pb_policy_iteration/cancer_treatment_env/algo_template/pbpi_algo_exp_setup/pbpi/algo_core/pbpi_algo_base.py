@@ -22,6 +22,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 
+from sklearn.linear_model import LogisticRegression
+
 import matplotlib.pyplot as plt
 
 import warnings
@@ -347,7 +349,6 @@ def train_model(train_data                  # collection of all preference data
         #   This includes starting tumor size and toxicity
         #   State values are rounded; this seems to improve the performance
         input_states  = torch.from_numpy(np.array(train_df_reduced.state.apply(lambda x: [round(x[0], 5).astype(float), round(x[1], 5).astype(float)]).tolist())) 
-
         
         # Create TensorDataset
         train_ds = TensorDataset(input_states , output_labels)
@@ -359,7 +360,7 @@ def train_model(train_data                  # collection of all preference data
         train_dl = DataLoader(train_ds
                               , batch_size
                               , shuffle=True
-                              #, drop_last=True
+                              , drop_last=True
                              )
         
         
@@ -376,8 +377,9 @@ def train_model(train_data                  # collection of all preference data
 
             # create layers
             for layer_dim in layers:
-                all_layers.append(nn.Linear(input_size, layer_dim))
+                all_layers.append(nn.Linear(input_size, layer_dim))                
                 all_layers.append(nn.LeakyReLU(inplace=True))
+                all_layers.append(nn.BatchNorm1d(layer_dim))
                 input_size = layer_dim
 
             all_layers.append(nn.Linear(layers[-1], output_label_len))
@@ -481,6 +483,9 @@ def train_model(train_data                  # collection of all preference data
         plt.xlabel('epoch')
         plt.title(f'Training samples: {train_df_reduced.shape[0]} | Training loss: {str(np.round(loss_v,5))}\n')
         plt.show()
+
+    # free un-used memory
+    torch.cuda.empty_cache()
 
     # set the model to evaluation mode and return it
     return model.eval()

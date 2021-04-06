@@ -33,7 +33,7 @@ def run_evaluations(policy               # input policy
 
     simu_per_state = simulations_per_state
 
-    this = 51#np.random.randint(100)
+    this = np.random.randint(100) #51
 
     print(f"\nEvaluation 200 patient generation seed is: {this}\n")
 

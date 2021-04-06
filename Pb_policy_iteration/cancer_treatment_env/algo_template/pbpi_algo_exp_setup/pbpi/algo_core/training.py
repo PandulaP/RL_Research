@@ -68,7 +68,7 @@ def evaluations_per_config(s_size
     ## hyper-parameters ##
     env_name = env_name
 
-    this = 51#np.random.randint(100)
+    this = np.random.randint(100) #51
 
     # Load custom initial state data if provided
     if init_state_path is not None:
