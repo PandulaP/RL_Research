@@ -21,6 +21,8 @@ def run_evaluations(policy               # input policy
                     , print_policy_behaviour = False # Whether to plot action selection vs. pendulum angle
                     , model_name_input     = None # Name of the used LabelRanker model
                     , experiment_run_input = None # At which experiment run the evaluation was called at
+                    , adjust_tumor = False
+                    , set_seed_eval = None
                    ):  
                    
     """
@@ -33,12 +35,10 @@ def run_evaluations(policy               # input policy
 
     simu_per_state = simulations_per_state
 
-    this = np.random.randint(100) #51
-
-    print(f"\nEvaluation 200 patient generation seed is: {this}\n")
+    print(f"\nEvaluation 200 patient generation seed is: {set_seed_eval}\n")
 
     # Create 200 virtual patients | new set of patients generated in each evaluation
-    INIT_STATES = create_initial_state_set(virtual_patients, seed = this)
+    INIT_STATES = create_initial_state_set(virtual_patients, seed = set_seed_eval, adjust_tumor =  adjust_tumor)
         
     # create an environment instance
     env_test = gym.make(env_name)
@@ -238,7 +238,7 @@ def run_evaluations(policy               # input policy
         # Join learned policy performance
         plot_df_summary = pd.concat([plot_df_summary, learned_policy_metrics_df])  
 
-        ##########################################################
+
         ##################### Plotting data #####################
 
         # Data for the connecting line (excluding random dosage)
@@ -258,17 +258,17 @@ def run_evaluations(policy               # input policy
         fig, ax = plt.subplots(nrows =  1, ncols=2, figsize = (14,5))
 
         sns.scatterplot(x='end_tumor_size'
-                    , y= 'max_toxicity'
+                    , y = 'max_toxicity'
                     , data = plot_df_summary
                     , s=120
                     , ax = ax[0]
                     )
 
         for i in range(plot_df_summary.shape[0]):
-            ax[0].text(x=plot_df_summary.end_tumor_size[i]+0.2
-                    ,y=plot_df_summary.max_toxicity[i]+0.2
-                    ,s=plot_df_summary.index[i]
-                    , fontdict=dict(color='black', size=11)
+            ax[0].text(x = plot_df_summary.end_tumor_size[i]+0.2
+                        , y = plot_df_summary.max_toxicity[i]+0.2
+                        , s = plot_df_summary.index[i]
+                        , fontdict = dict(color='black', size=11)
                     )
 
         sns.lineplot(x = line_x
@@ -296,81 +296,6 @@ def run_evaluations(policy               # input policy
         plt.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.png') # save the evaluation image
         plt.show()  
 
-    # # Evaluate the policy performance on the random starting state
-    # if print_policy_behaviour:
-
-    #     # Create placeholders for the pendulum angle and action values
-    #     act_vals = []
-    #     pend_angle_vals = []
-
-    #     # Initialize the environment to starting state
-    #     # Randomly set the initial pendulum value as U[-.1,.1)
-    #     starting_state = [0, 0, np.random.uniform(-.1,.1), 0]
-    #     obs = env_test.reset(init_state = np.array(starting_state))
-
-    #     # Store the length of the episode
-    #     ret_ep = 0
-
-    #     # Let the policy interact with the environment
-    #     for _ in range(1001):
-
-    #         pend_angle_vals.append(obs.reshape(-1)[2]) # append the new pendulum angle value
-
-    #         a = policy.label_ranking_policy(obs) # generate action from the policy
-    #         obs, r, terminate, _ = env_test.step(a) # execute action
-            
-    #         act_vals.append(a.reshape(-1)[0])    # append the performed action value
-
-    #         ret_ep += r   # compute return (number of executed steps)
-            
-    #         if terminate: break
-
-    #     # Create a dataframe with pendulum angle values and executed actions
-    #     eval_df = pd.DataFrame({'pendulum_angle': pend_angle_vals
-    #                             , 'act_vals': act_vals})
-        
-    #     # Add evaluation reward to dataframe
-    #     #eval_df.loc[:,'eval_return'] = ret_ep
-
-    #     def recode_act_val(val):
-    #         """Recode the action values"""
-
-    #         if val < 0:
-    #             return f'{abs(val)*50}N force to RIGHT'
-    #         elif val > 0:
-    #             return f'{abs(val)*50}N force to LEFT'
-    #         elif val == 0:
-    #             return f'No force'
-    #         else:
-    #             return 'somethings wrong!'
-
-    #     eval_df.loc[:, 'Action'] = eval_df.act_vals.apply(lambda val: recode_act_val(val))
-
-    #     g = sns.displot(x = 'pendulum_angle'
-    #                     , row='Action'
-    #                     , data = eval_df
-    #                     , bins = 100
-    #                     , aspect = 2
-    #                     , height = 3
-    #                     , kde =True).set(xlabel = 'Pendulum Angle')
-
-    #     g.map(plt.axvline, x=0, c='red')
-    #     g.fig.subplots_adjust(top=.93) 
-    #     g.fig.suptitle('Actions vs. Pendulum angle', fontsize= 10)
-    #     plt.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.png') # save the evaluation image
-    #     plt.show()        
-        
-    #     #eval_df.to_csv(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.csv', index=False)
-    #     print(f"\nPolicy Iteration: {iterr_num} - Length of the evaluation episode: {ret_ep} (init. state: {[round(val,2) for val in starting_state]})")
-
-    # Evaluation metric returns
-    # 1. % sufficient policy counts (total sufficient policies/ total # evaluation runs)
-    # 2. 'avg. episodic return'
-    # 3. maximum episodic return (across all evaluations)
-    # 4. minimum episodic return (across all evaluations)
-
-    # avg_return = (sum(ep_returns)/(len(state_list)*simu_per_state))
-    # pct_sr = (suf_policy_count/(len(state_list)*simu_per_state))*100
 
     if print_eval_summary:
         

@@ -43,24 +43,25 @@ def partition_action_space(env_name:'string'
     return part_act_space
 
 
-def evaluations_per_config(s_size 
-                           , n_actions
-                           , max_n_rollouts
-                           , sig_lvl
-                           , runs_per_config = 10
-                           , max_policy_iter_per_run = 10
-                           , eval_runs_per_state = 100
-                           , off_policy_explr = False
-                           , env_name = 'ChemoSimulation-v0'
-                           , init_state_path: str = None
-                           , show_experiment_run_eval_summary_plot = False
-                           , rollout_tracking = False
-                           , dataset_tracking = False
-                           , train_plot_tracking = False
-                           , eval_summary_tracking = False
-                           , policy_behaviour_tracking = False
-                           , set_seed = 10
-                           ):
+def evaluations_per_config(s_size
+                            , n_actions
+                            , max_n_rollouts
+                            , sig_lvl
+                            , runs_per_config = 10
+                            , max_policy_iter_per_run = 10
+                            , eval_runs_per_state = 100
+                            , off_policy_explr = False
+                            , env_name = 'ChemoSimulation-v0'
+                            , init_state_path: str = None
+                            , show_experiment_run_eval_summary_plot = False
+                            , rollout_tracking = False
+                            , dataset_tracking = False
+                            , train_plot_tracking = False
+                            , eval_summary_tracking = False
+                            , policy_behaviour_tracking = False
+                            , set_seed = None
+                            , adjust_tumor_size = False
+                            ):
     
     #########################
     ### PARAMETER INPUTS ###
@@ -68,13 +69,16 @@ def evaluations_per_config(s_size
     ## hyper-parameters ##
     env_name = env_name
 
-    this = np.random.randint(100) #51
+    if set_seed is not None:
+        this = set_seed
+    else:
+        this = np.random.randint(100) #51
 
     # Load custom initial state data if provided
     if init_state_path is not None:
         INIT_STATES = pd.read_csv(init_state_path)
     else:
-        INIT_STATES = create_initial_state_set(s_size, seed = this)
+        INIT_STATES = create_initial_state_set(s_size, seed = this, adjust_tumor = adjust_tumor_size)
     
     print(f"\nState generation seed is {this}\n")
 
@@ -258,16 +262,18 @@ def evaluations_per_config(s_size
 
             # evaluate the performance of the learned policy
             avg_t_size, avg_max_tox, avg_prob_death = run_evaluations(target_policy
-                                                        , sample_states
-                                                        , simulations_per_state = eval_simu_per_state
-                                                        , virtual_patients = 200 
-                                                        , sim_episode_length = 6
-                                                        , iterr_num = iterr
-                                                        , print_eval_summary = eval_summary_tracking
-                                                        , print_policy_behaviour = policy_behaviour_tracking
-                                                        , model_name_input =  model_name
-                                                        , experiment_run_input = run+1
-                                                       ) 
+                                                                    , sample_states
+                                                                    , simulations_per_state = eval_simu_per_state
+                                                                    , virtual_patients = 200 
+                                                                    , sim_episode_length = 6
+                                                                    , iterr_num = iterr
+                                                                    , print_eval_summary = eval_summary_tracking
+                                                                    , print_policy_behaviour = policy_behaviour_tracking
+                                                                    , model_name_input =  model_name
+                                                                    , experiment_run_input = run+1
+                                                                    , adjust_tumor = adjust_tumor_size
+                                                                    , set_seed_eval = set_seed
+                                                                ) 
 
 
             # record evaluation results (across training iterations)

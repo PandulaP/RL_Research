@@ -158,6 +158,7 @@ def run_evaluations(policy               # input policy
                                 , y = "angular_velocity"
                                 , hue = "Action"
                                 , hue_order = sorted(eval_df.Action.unique(), reverse=True)
+                                , palette = ['orange', 'blue', 'brown'] if len(eval_df.Action.unique()) == 3 else ['orange', 'blue', 'brown', 'green', 'pink'][:len(eval_df.Action.unique())] 
                                 , kind = "kde"
                                 , height = 7
                                 )
@@ -173,6 +174,32 @@ def run_evaluations(policy               # input policy
             print(f"\nCan't create joint-plot: Matrix is not positive definite!\n")
             pass
         
+        _, ax = plt.subplots(nrows = 2
+                            , ncols = 1
+                            , figsize = (15, 12))
+
+        sns.scatterplot(data = eval_df
+                        , x = eval_df.index
+                        , y = 'pendulum_angle'
+                        , hue = 'Action'
+                        , hue_order = sorted(eval_df.Action.unique(), reverse=True)
+                        , palette = ['orange', 'blue', 'brown'] if len(eval_df.Action.unique()) == 3 else ['orange', 'blue', 'brown', 'green', 'pink'][:len(eval_df.Action.unique())] 
+                        , ax =  ax[0])
+        ax[0].set_xlabel('Step of the episode')
+        ax[0].set_title('Performed action at different pendulum angles at each step of the episode')
+
+        sns.scatterplot(data = eval_df
+                        , x = eval_df.index
+                        , y = 'angular_velocity'
+                        , hue = 'Action'
+                        , hue_order = sorted(eval_df.Action.unique(), reverse=True)
+                        , palette = ['orange', 'blue', 'brown'] if len(eval_df.Action.unique()) == 3 else ['orange', 'blue', 'brown', 'green', 'pink'][:len(eval_df.Action.unique())]
+                        , ax =  ax[1])
+        ax[1].set_title('Performed action at different angular velocity at each step of the episode')
+        ax[1].set_xlabel('Step of the episode')
+        
+        #sns.scatterplot(data = eval_df, x = eval_df.index, y = 'Action', ax =  ax[2])
+
         #eval_df.to_csv(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.csv', index=False)
         print(f"\nPolicy Iteration: {iterr_num} - Length of the evaluation episode: {ret_ep} (init. state: {[round(val,2) for val in starting_state]})\n")
 

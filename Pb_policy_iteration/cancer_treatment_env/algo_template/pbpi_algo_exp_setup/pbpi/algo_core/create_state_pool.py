@@ -11,13 +11,20 @@ from pathlib import Path
 
 ###################################################
 
-def create_initial_state_set(sample_size:int, seed = 16):
+def create_initial_state_set(sample_size:int, adjust_tumor:bool = False, seed = 16):
 
     np.random.seed(seed)
     
-    # Initial patient set
-    tumor_size_init, toxicity_init = np.random.uniform(low=0, high=2, size = (2, sample_size))
-    init_patients = [(t_size, toxicity) for t_size, toxicity in zip(tumor_size_init,toxicity_init)]
+    if adjust_tumor:
+        # Create an initial patient set with tumor-size>1
+        tumor_size_init, toxicity_init = np.vstack((np.random.uniform(low=1,high=2, size = sample_size)
+                                                    , np.random.uniform(low=0,high=2, size = sample_size)))
+        init_patients = [(t_size, toxicity) for t_size, toxicity in zip(tumor_size_init,toxicity_init)]
+
+    else:    
+        # Initial patient set
+        tumor_size_init, toxicity_init = np.random.uniform(low=0, high=2, size = (2, sample_size))
+        init_patients = [(t_size, toxicity) for t_size, toxicity in zip(tumor_size_init,toxicity_init)]
     
     return init_patients
 
