@@ -26,8 +26,8 @@ def random_action(environment, seed=10):
 
 
 def partition_action_space(env_name:'string'
-                           , n_actions:'int'
-                           , fixed=False):
+                            , n_actions:'int'
+                            , fixed=False):
     """function to partitions the action space of an environment into a given number of actions`"""
     
     # Initialize environment
@@ -71,17 +71,17 @@ def evaluations_per_config(s_size
     env_name = env_name
 
     if set_seed is not None:
-        this = set_seed
+        this_seed = set_seed
     else:
-        this = np.random.randint(100) #51
+        this_seed = np.random.randint(100) #51
 
     # Load custom initial state data if provided
     if init_state_path is not None:
         INIT_STATES = pd.read_csv(init_state_path)
     else:
-        INIT_STATES = create_initial_state_set(s_size, seed = this, adjust_tumor = adjust_tumor_size)
+        INIT_STATES = create_initial_state_set(s_size, seed = this_seed, adjust_tumor = adjust_tumor_size)
     
-    print(f"\nState generation seed is {this}\n")
+    print(f"\nState generation seed is {this_seed}\n")
 
     NUM_SAMPLES = len(INIT_STATES)
 
@@ -274,7 +274,7 @@ def evaluations_per_config(s_size
                                                                     , model_name_input =  model_name
                                                                     , experiment_run_input = run+1
                                                                     , adjust_tumor = adjust_tumor_size
-                                                                    , set_seed_eval = set_seed
+                                                                    , set_seed_eval = this_seed
                                                                 ) 
 
 
