@@ -35,7 +35,7 @@ def run_evaluations(policy               # input policy
 
     simu_per_state = simulations_per_state
 
-    print(f"\nEvaluation 200 patient generation seed is: {set_seed_eval}\n")
+    #print(f"\nEvaluation 200 patient generation seed is: {set_seed_eval}\n")
 
     # Create 200 virtual patients | new set of patients generated in each evaluation
     INIT_STATES = create_initial_state_set(virtual_patients, seed = set_seed_eval, adjust_tumor =  adjust_tumor)
