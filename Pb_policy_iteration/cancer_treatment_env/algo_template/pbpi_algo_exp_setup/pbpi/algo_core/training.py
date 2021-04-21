@@ -50,6 +50,7 @@ def evaluations_per_config(s_size
                             , runs_per_config = 10
                             , max_policy_iter_per_run = 10
                             , eval_runs_per_state = 100
+                            , treatment_length = 6
                             , off_policy_explr = False
                             , env_name = 'ChemoSimulation-v0'
                             , init_state_path: str = None
@@ -181,6 +182,7 @@ def evaluations_per_config(s_size
                                                                          , n_rollouts     = n_rollouts
                                                                          , p_sig          = sig_lvl
                                                                          , tracking       = rollout_tracking
+                                                                         , max_rollout_len = treatment_length
                                                                           )   
 
                     # append the generated preference data to the training data list
@@ -265,7 +267,7 @@ def evaluations_per_config(s_size
                                                                     , sample_states
                                                                     , simulations_per_state = eval_simu_per_state
                                                                     , virtual_patients = 200 
-                                                                    , sim_episode_length = 6
+                                                                    , sim_episode_length = treatment_length
                                                                     , iterr_num = iterr
                                                                     , print_eval_summary = eval_summary_tracking
                                                                     , print_policy_behaviour = policy_behaviour_tracking
