@@ -14,11 +14,12 @@ class Policy():
         - This Policy object takes a given neural network (LabelRanker) model and uses it to define a policy for the agent to follow
     """
     
-    def __init__(self, action_space, model, probs, modified_algo_flag = False):
+    def __init__(self, action_space, model, probs, modified_algo_flag = False, action_probs = False):
         self.action_space = action_space # action space of the current environment
         self.model = model               # trained NN (LabelRanker) model
         self.probs = probs               # list of probabilities for actions
         self.modified_algo_flag = modified_algo_flag # Modified algorithm flag
+        self.action_probabilities = action_probs
         
     def label_ranking_policy(self,obs):
         """ Produces an action for a given state based on the LabelRanker model prediction
@@ -69,10 +70,16 @@ class Policy():
         #  Action values are clipped to be in the [-1,1] range
 
         if self.modified_algo_flag:
-            return_action = np.array([[np.clip(self.action_space[int(action)],-1,1)]])
+            if self.action_probabilities:
+                return_action = np.array([[np.clip(self.action_space[int(action)],-1,1)]])
+                return return_action, preds.detach().numpy()
+            else:
+                return_action = np.array([[np.clip(self.action_space[int(action)],-1,1)]])
+
+                return return_action
         else:
             return_action = np.array([[np.clip(self.action_space[int(action)] + np.array(np.random.uniform(low = -.2,high=.2),dtype=float),-1,1)]])
-       
-        return return_action
+
+            return return_action
 
 ########################################

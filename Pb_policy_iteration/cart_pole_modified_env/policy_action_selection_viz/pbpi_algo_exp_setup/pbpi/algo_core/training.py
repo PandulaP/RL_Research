@@ -40,22 +40,23 @@ def partition_action_space(env_name:'string'
 
 
 def evaluations_per_config(s_size 
-                           , n_actions
-                           , max_n_rollouts
-                           , sig_lvl
-                           , runs_per_config = 10
-                           , max_policy_iter_per_run = 10
-                           , eval_runs_per_state = 100
-                           , off_policy_explr = False
-                           , env_name = 'CustomCartPole-v0'
-                           , init_state_path: str = None
-                           , show_experiment_run_eval_summary_plot = False
-                           , rollout_tracking = False
-                           , dataset_tracking = False
-                           , train_plot_tracking = False
-                           , eval_summary_tracking = False
-                           , policy_behaviour_tracking = False
-                           ):
+                            , n_actions
+                            , max_n_rollouts
+                            , sig_lvl
+                            , runs_per_config = 10
+                            , max_policy_iter_per_run = 10
+                            , eval_runs_per_state = 100
+                            , off_policy_explr = False
+                            , env_name = 'CustomCartPole-v0'
+                            , init_state_path: str = None
+                            , show_experiment_run_eval_summary_plot = False
+                            , rollout_tracking = False
+                            , dataset_tracking = False
+                            , train_plot_tracking = False
+                            , eval_summary_tracking = False
+                            , policy_behaviour_tracking = False
+                            , generate_eva_action_probs = False
+                            ):
     
     #########################
     ### PARAMETER INPUTS ###
@@ -219,7 +220,7 @@ def evaluations_per_config(s_size
                 if len(act_space)>2:
                     prob_fill =  np.repeat(0,len(act_space)-2)
                     
-                target_policy = Policy(act_space, model, [1.0, 0.0]+list(prob_fill), modified_algo_flag = True) # always select the highest ranked action
+                target_policy = Policy(act_space, model, [1.0, 0.0]+list(prob_fill), modified_algo_flag = True, action_probs = generate_eva_action_probs) # always select the highest ranked action
                 exp_policy = Policy(act_space, model, [0.5, 0.5]+list(prob_fill), modified_algo_flag = True)    # select the first two highest ranked actions w/ same prob. 
 
             else:
@@ -251,7 +252,7 @@ def evaluations_per_config(s_size
                                                         , print_policy_behaviour = policy_behaviour_tracking
                                                         , model_name_input =  model_name
                                                         , experiment_run_input = run+1
-                                                       ) 
+                                                        ) 
 
 
             # record evaluation results (across training iterations)

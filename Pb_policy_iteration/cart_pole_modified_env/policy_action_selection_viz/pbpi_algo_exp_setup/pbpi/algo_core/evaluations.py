@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
+from itertools import product
 
 ######################################
 ### Evaluating the learned policy ####
@@ -57,7 +57,7 @@ def run_evaluations(policy               # input policy
 
             # execute 1001 steps in the environment
             for _ in range(1001):
-                action = policy.label_ranking_policy(obs) # generate action from the policy
+                action, _ = policy.label_ranking_policy(obs) # generate action from the policy
                 obs, reward, done, _ = env_test.step(action) # execute action
                 #obs = observation     # set history
                 return_ep += reward   # compute return
@@ -81,6 +81,76 @@ def run_evaluations(policy               # input policy
     # Evaluate the policy performance on the neutral starting state, i.e., [0,0,0,0]
     if print_policy_behaviour:
 
+        # Generate action probabilities
+
+        # Create the state value space to get action probability distributions
+        state_vals_pend_angl  = np.linspace(-.211, .211, 401).round(3)
+        state_vals_angl_vel   = np.linspace(-.461, .461, 401).round(3)
+        state_val_combi = list(product(state_vals_pend_angl, state_vals_angl_vel))
+        state_val_combi = [list(tup) for tup in state_val_combi]
+        state_values    = [[0.,0.]+l for l in state_val_combi]
+
+        action_prob_data = []
+
+        for state in state_values:
+
+            act_prob_dict = {}
+            selected_action, action_probs = policy.label_ranking_policy(state) # generate action from the policy
+
+            act_prob_dict['pendulum_angle'] = state[2]
+            act_prob_dict['angular_velocity'] = state[3]
+            act_prob_dict['action_1_prob'] = action_probs[0]
+            act_prob_dict['action_2_prob'] = action_probs[1]
+            act_prob_dict['action_3_prob'] = action_probs[2]
+            act_prob_dict['selected_action'] = selected_action
+
+            action_prob_data.append(act_prob_dict)
+
+        action_prob_data_df = pd.DataFrame(action_prob_data)
+        #action_prob_data_df.to_csv('delete_this.csv', index=False)
+
+        action_prob_data_df.pendulum_angle = action_prob_data_df.pendulum_angle
+        action_prob_data_df.angular_velocity = action_prob_data_df.angular_velocity
+
+        cols = ['action_1_prob',	'action_2_prob',	'action_3_prob']
+
+        action_prob_data_df_2 = action_prob_data_df.loc[:,cols]\
+                                .subtract(action_prob_data_df.loc[:,cols].min(axis=1), axis=0)\
+                                .divide(action_prob_data_df.loc[:,cols].max(axis=1) - action_prob_data_df.loc[:,cols].min(axis=1), axis=0)
+
+        action_prob_data_df = action_prob_data_df.loc[:,['pendulum_angle',	'angular_velocity']]\
+                                .merge(action_prob_data_df_2, right_index=True, left_index=True, how='inner')
+
+
+        fig, ax = plt.subplots(nrows = 1, ncols = 3, figsize= (26,6))
+
+        heat1 = action_prob_data_df.pivot_table(index = 'angular_velocity', columns = 'pendulum_angle', values = 'action_1_prob')
+        heat2 = action_prob_data_df.pivot_table(index = 'angular_velocity', columns = 'pendulum_angle', values = 'action_2_prob')
+        heat3 = action_prob_data_df.pivot_table(index = 'angular_velocity', columns = 'pendulum_angle', values = 'action_3_prob')
+
+        sns.heatmap(heat1, ax=ax[0])
+        sns.heatmap(heat2, ax=ax[1])
+        sns.heatmap(heat3, ax=ax[2])
+
+        ax[0].set_title("Probability of 'Force to right' action having the highest rank\n", fontsize = 12)
+        ax[1].set_title("Probability of 'No Force' action having the highest rank\n", fontsize = 12)
+        ax[2].set_title("Probability of 'Force to left' action having the highest rank\n", fontsize = 12)
+
+        ax[0].invert_yaxis()
+        ax[1].invert_yaxis()
+        ax[2].invert_yaxis()
+
+        ax[0].set_xlabel('Pendulum angle')
+        ax[1].set_xlabel('Pendulum angle')
+        ax[2].set_xlabel('Pendulum angle')
+
+        ax[0].set_ylabel('Angular velocity')
+        ax[1].set_ylabel('Angular velocity')
+        ax[2].set_ylabel('Angular velocity')
+
+        plt.show()
+        fig.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_act_cond_dist.png') # save the evaluation image
+
         # Create placeholders for the pendulum angle, angular velocity and action values
         act_vals = []
         pend_angle_vals = []
@@ -100,7 +170,7 @@ def run_evaluations(policy               # input policy
             pend_angle_vals.append(obs.reshape(-1)[2]) # append the new pendulum angle value
             angular_vel_vals.append(obs.reshape(-1)[3]) # append the new angular veloocity value
 
-            a = policy.label_ranking_policy(obs) # generate action from the policy
+            a, _ = policy.label_ranking_policy(obs) # generate action from the policy
             obs, r, terminate, _ = env_test.step(a) # execute action
             
             act_vals.append(a.reshape(-1)[0])    # append the performed action value
