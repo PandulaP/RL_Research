@@ -120,7 +120,8 @@ def run_evaluations(policy               # input policy
 
         action_prob_data_df = action_prob_data_df.loc[:,['pendulum_angle',	'angular_velocity']]\
                                 .merge(action_prob_data_df_2, right_index=True, left_index=True, how='inner')
-
+        
+        plt.close("all") # close any plots open already
 
         fig, ax = plt.subplots(nrows = 1, ncols = 3, figsize= (26,6))
 
