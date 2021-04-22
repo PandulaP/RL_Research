@@ -29,8 +29,8 @@ def run_evaluations(policy               # input policy
     Description:
     
         - For every state in a given list of initial states, 100 simulations are generate and the percentage of
-           these simulations that exceeds a predefined step-count threadhold (trajectory length) is computed to measure 
-           the performance of the given input policy."""
+        these simulations that exceeds a predefined step-count threadhold (trajectory length) is computed to measure 
+        the performance of the given input policy."""
     
 
     simu_per_state = simulations_per_state
@@ -331,7 +331,7 @@ def run_evaluations(policy               # input policy
                     , ax = ax[0])
 
         ax[0].lines[0].set_linestyle("--")
-        ax[0].set(ylim=(0, 7))
+        ax[0].set(ylim=(0, plot_df_summary.max_toxicity.max() + .5))
         ax[0].grid()
         ax[0].set_title ('Max Toxicity vs. Tumor size')
         ax[0].set_ylabel('Max toxicity')
