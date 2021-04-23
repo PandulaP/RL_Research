@@ -84,8 +84,8 @@ def run_evaluations(policy               # input policy
         # Generate action probabilities
 
         # Create the state value space to get action probability distributions
-        state_vals_pend_angl  = np.linspace(-.211, .211, 401).round(3)
-        state_vals_angl_vel   = np.linspace(-.461, .461, 401).round(3)
+        state_vals_pend_angl  = np.linspace(-.211, .211, 101).round(3)
+        state_vals_angl_vel   = np.linspace(-.461, .461, 101).round(3)
         state_val_combi = list(product(state_vals_pend_angl, state_vals_angl_vel))
         state_val_combi = [list(tup) for tup in state_val_combi]
         state_values    = [[0.,0.]+l for l in state_val_combi]
@@ -149,7 +149,7 @@ def run_evaluations(policy               # input policy
         ax[1].set_ylabel('Angular velocity')
         ax[2].set_ylabel('Angular velocity')
 
-        plt.show()
+        #plt.show()
         fig.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_act_cond_dist.png') # save the evaluation image
 
         # Create placeholders for the pendulum angle, angular velocity and action values
@@ -239,7 +239,7 @@ def run_evaluations(policy               # input policy
             j_plot.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_bhvior_2.png') # save the evaluation image
             
             #plt.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.png') # save the evaluation image
-            plt.show()
+            #plt.show()
 
         except:
             print(f"\nCan't create joint-plot: Matrix is not positive definite!\n")
@@ -269,7 +269,7 @@ def run_evaluations(policy               # input policy
         ax2[1].set_title('Performed action at different angular velocity at each step of the episode')
         ax[1].set_xlabel('Step of the episode')
 
-        plt.show()
+        #plt.show()
         fig2.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_bhvior_3.png') # save the evaluation image
         
         #sns.scatterplot(data = eval_df, x = eval_df.index, y = 'Action', ax =  ax[2])
