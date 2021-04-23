@@ -141,6 +141,8 @@ def run_evaluations(policy               # input policy
 
     learned_policy_state_data_df = pd.DataFrame(state_data_list)
 
+    plt.close('all')
+    
     def generate_evaluation_plot(init_state_set=INIT_STATES, learned_policy_metrics_df = lrned_p_metrics_df):
 
         # Create instance of the environment

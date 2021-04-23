@@ -18,6 +18,7 @@ import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -63,7 +64,7 @@ def evaluate_preference(starting_state # starting state of roll-outs
         
     # dictionary to store input action values
     actions = { 'one' : action_1    
-              , 'two' : action_2}    
+                , 'two' : action_2}    
 
     # dictionary to store rewards of roll-outs
     r = { 'one' : [None]*n_rollouts 
@@ -138,22 +139,22 @@ def evaluate_preference(starting_state # starting state of roll-outs
     # return preference information
     if (avg_r['one'] > avg_r['two']) and (p_val <= p_sig):
         return {'state': s_init
-               , 'a_j' : actions['one']
-               , 'a_k' : actions['two']
-               , 'preference_label' : 1}, action_count
+                , 'a_j' : actions['one']
+                , 'a_k' : actions['two']
+                , 'preference_label' : 1}, action_count
     
     elif(avg_r['one'] < avg_r['two']) and (p_val <= p_sig):
         return {'state': s_init
-               , 'a_j' : actions['one']
-               , 'a_k' : actions['two']
-               , 'preference_label' : 0}, action_count
+                , 'a_j' : actions['one']
+                , 'a_k' : actions['two']
+                , 'preference_label' : 0}, action_count
     
     # return NaN if avg. returns are not significantly different from each other OR are equal
     else: 
         return {'state': np.nan
-               , 'a_j' : np.nan
-               , 'a_k' : np.nan
-               , 'preference_label' : np.nan}, action_count
+                , 'a_j' : np.nan
+                , 'a_k' : np.nan
+                , 'preference_label' : np.nan}, action_count
     
 ##########################################
 
@@ -181,7 +182,7 @@ def train_model(train_data                  # collection of all preference data
             X: [state-value (2-D)]
             Y: [(normalized) ranking of actions (n-D)], where 'n' is the number of actions in the action space.
         - For a given (2-D) state input, the (trained) model, i.e., LabelRanker, predicts the rank of 
-           all possible actions at the input state 
+            all possible actions at the input state 
     """
 
     
@@ -255,9 +256,9 @@ def train_model(train_data                  # collection of all preference data
 
         # append the column having action-preference-counts vectors to the training dataset
         train_df = train_df.merge(right = action_preference_counts.loc[:,['preference_label_vector']]
-                                  , right_index= True
-                                  , left_on = 'state_key'
-                                  , how = 'left')
+                                    , right_index= True
+                                    , left_on = 'state_key'
+                                    , how = 'left')
         
 
         # create the reduced training dataset 
@@ -265,10 +266,32 @@ def train_model(train_data                  # collection of all preference data
         train_df_reduced = train_df.loc[:,['state', 'state_key', 'preference_label_vector']]
         train_df_reduced.drop_duplicates(subset=['state_key'],inplace=True)
         train_df_reduced.preference_label_vector = train_df_reduced.preference_label_vector.apply(lambda row: np.array(row).astype(np.float)) # convert all label vectors to float
-        
+
         if show_dataset:
             print(f'\nTraining data samples: {train_df_reduced.shape[0]}')
-            print(train_df_reduced.loc[:,['state_key', 'preference_label_vector']])
+            #print(train_df_reduced.loc[:,['state_key', 'preference_label_vector']])
+
+            train_df_reduced.loc[:, 'Pendulum angle'] = train_df_reduced.state_key.apply(lambda val: round(tuple([float(item) for item in val.split('_')])[0],5))
+            train_df_reduced.loc[:, 'Angular velocity'] = train_df_reduced.state_key.apply(lambda val: round(tuple([float(item) for item in val.split('_')])[0],5) )
+
+            joint_p = sns.jointplot(x='Pendulum angle', y='Angular velocity',data=train_df_reduced, kind="hist", cbar=True, height=7, ratio=7)
+            plt.subplots_adjust(left=0.1, right=0.8, top=0.90, bottom=0.1)
+
+            # get the current positions of the joint ax and the ax for the marginal x
+            pos_joint_ax = joint_p.ax_joint.get_position()
+            pos_marg_x_ax = joint_p.ax_marg_x.get_position()
+
+            # reposition the joint ax so it has the same width as the marginal x ax
+            joint_p.ax_joint.set_position([pos_joint_ax.x0, pos_joint_ax.y0, pos_marg_x_ax.width, pos_joint_ax.height])
+
+            # reposition the colorbar using new x positions and y positions of the joint ax
+            joint_p.fig.axes[-1].set_position([.85, pos_joint_ax.y0, .07, pos_joint_ax.height])
+
+            joint_p.fig.suptitle("States included in the preferences (training) dataset", fontsize = 14)
+            #kdeplot.fig.subplots_adjust(top=.93)
+            plt.show()
+
+            joint_p.savefig(f_paths.paths['policy_behavior_output'] + f'_state_space.png') # save the evaluation image
         
         ### preparing the training dataset for the neural network (LabelRanker) model ###
 
@@ -295,10 +318,10 @@ def train_model(train_data                  # collection of all preference data
         
         # define the data loader
         train_dl = DataLoader(train_ds
-                              , batch_size
-                              , shuffle=True
-                              #, drop_last=True
-                             )
+                                , batch_size
+                                , shuffle=True
+                                #, drop_last=True
+                                )
         
         
     ### Defining and training the neural network (LabelRanker) model ###        

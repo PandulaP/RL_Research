@@ -208,20 +208,20 @@ def run_evaluations(policy               # input policy
                                             , var_name = 'state_variable'
                                             , value_name = 'vals')
 
-        dis_p = sns.displot(x = 'vals'
-                        , col = 'state_variable'
-                        , row = 'Action'
-                        , data = melted_eval_df
-                        , bins = 100
-                        , aspect = 2
-                        , height = 3
-                        , kde =True)#.set(xlabel = 'Pendulum Angle')
+        # dis_p = sns.displot(x = 'vals'
+        #                 , col = 'state_variable'
+        #                 , row = 'Action'
+        #                 , data = melted_eval_df
+        #                 , bins = 100
+        #                 , aspect = 2
+        #                 , height = 3
+        #                 , kde =True)#.set(xlabel = 'Pendulum Angle')
 
 
-        dis_p.map(plt.axvline, x=0, c='red')
-        dis_p.fig.subplots_adjust(top=.93) 
-        dis_p.fig.suptitle('Actions vs. Pendulum angle & Angular Velocity', fontsize= 10)
-        dis_p.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_bhvior_1.png') # save the evaluation image
+        # dis_p.map(plt.axvline, x=0, c='red')
+        # dis_p.fig.subplots_adjust(top=.93) 
+        # dis_p.fig.suptitle('Actions vs. Pendulum angle & Angular Velocity', fontsize= 10)
+        # dis_p.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_bhvior_1.png') # save the evaluation image
 
         try:
             j_plot = sns.jointplot(data = eval_df
@@ -245,7 +245,7 @@ def run_evaluations(policy               # input policy
             print(f"\nCan't create joint-plot: Matrix is not positive definite!\n")
             pass
         
-        _, ax = plt.subplots(nrows = 2
+        fig2, ax2 = plt.subplots(nrows = 2
                             , ncols = 1
                             , figsize = (15, 12))
 
@@ -255,9 +255,9 @@ def run_evaluations(policy               # input policy
                         , hue = 'Action'
                         , hue_order = sorted(eval_df.Action.unique(), reverse=True)
                         , palette = ['orange', 'blue', 'brown'] if len(eval_df.Action.unique()) == 3 else ['orange', 'blue', 'brown', 'green', 'pink'][:len(eval_df.Action.unique())] 
-                        , ax =  ax[0])
-        ax[0].set_xlabel('Step of the episode')
-        ax[0].set_title('Performed action at different pendulum angles at each step of the episode')
+                        , ax =  ax2[0])
+        ax2[0].set_xlabel('Step of the episode')
+        ax2[0].set_title('Performed action at different pendulum angles at each step of the episode')
 
         sns.scatterplot(data = eval_df
                         , x = eval_df.index
@@ -265,9 +265,12 @@ def run_evaluations(policy               # input policy
                         , hue = 'Action'
                         , hue_order = sorted(eval_df.Action.unique(), reverse=True)
                         , palette = ['orange', 'blue', 'brown'] if len(eval_df.Action.unique()) == 3 else ['orange', 'blue', 'brown', 'green', 'pink'][:len(eval_df.Action.unique())]
-                        , ax =  ax[1])
-        ax[1].set_title('Performed action at different angular velocity at each step of the episode')
+                        , ax =  ax2[1])
+        ax2[1].set_title('Performed action at different angular velocity at each step of the episode')
         ax[1].set_xlabel('Step of the episode')
+
+        plt.show()
+        fig2.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_bhvior_3.png') # save the evaluation image
         
         #sns.scatterplot(data = eval_df, x = eval_df.index, y = 'Action', ax =  ax[2])
 

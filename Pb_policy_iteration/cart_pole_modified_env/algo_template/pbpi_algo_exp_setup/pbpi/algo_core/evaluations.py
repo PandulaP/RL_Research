@@ -78,6 +78,8 @@ def run_evaluations(policy               # input policy
                 suf_policy_count += 1
     
 
+    plt.close('all')
+
     # Evaluate the policy performance on the neutral starting state, i.e., [0,0,0,0]
     if print_policy_behaviour:
 

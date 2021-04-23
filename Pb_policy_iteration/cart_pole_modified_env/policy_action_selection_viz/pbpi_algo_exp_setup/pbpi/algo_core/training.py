@@ -157,15 +157,15 @@ def evaluations_per_config(s_size
 
                     # generate preference data & executed num. of actions in each action pair evaluation step
                     preference_out, actions_per_pair = evaluate_preference(starting_state = state
-                                                                         , action_1       = np.array([[action_pair[0]]])
-                                                                         , action_2       = np.array([[action_pair[1]]])
-                                                                         , policy_in      = policy
-                                                                         , label_ranker   = label_r_flag
-                                                                         , modified_algo  = True if off_policy_exploration else False
-                                                                         , n_rollouts     = n_rollouts
-                                                                         , p_sig          = sig_lvl
-                                                                         , tracking       = rollout_tracking
-                                                                          )   
+                                                                            , action_1       = np.array([[action_pair[0]]])
+                                                                            , action_2       = np.array([[action_pair[1]]])
+                                                                            , policy_in      = policy
+                                                                            , label_ranker   = label_r_flag
+                                                                            , modified_algo  = True if off_policy_exploration else False
+                                                                            , n_rollouts     = n_rollouts
+                                                                            , p_sig          = sig_lvl
+                                                                            , tracking       = rollout_tracking
+                                                                            )   
 
                     # append the generated preference data to the training data list
                     if preference_out is not None:
