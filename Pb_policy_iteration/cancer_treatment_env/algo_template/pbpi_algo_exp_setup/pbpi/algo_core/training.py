@@ -62,7 +62,9 @@ def evaluations_per_config(s_size
                             , eval_summary_tracking = False
                             , policy_behaviour_tracking = False
                             , set_seed = None
-                            , adjust_tumor_size = False
+                            , init_state_tag = 'None'
+                            , init_state_scenario = False
+                            , use_toxi_n_tumor_for_pref = False
                             ):
     
     #########################
@@ -80,7 +82,7 @@ def evaluations_per_config(s_size
     if init_state_path is not None:
         INIT_STATES = pd.read_csv(init_state_path)
     else:
-        INIT_STATES = create_initial_state_set(s_size, seed = this_seed, adjust_tumor = adjust_tumor_size)
+        INIT_STATES = create_initial_state_set(s_size, seed = this_seed, init_state_scenario = init_state_scenario)
     
     print(f"\nState generation seed is {this_seed}\n")
 
@@ -102,8 +104,8 @@ def evaluations_per_config(s_size
     off_policy_exploration = off_policy_explr # trigger to use off-policy exploration [MY MODIFICATION]
     eval_simu_per_state = eval_runs_per_state # number of evaluation runs from each initial starting state (evaluation)
     
-    method_name = 'Modified_algo' if off_policy_explr else 'Original_algo'                  # string to store whether modified/original algo is running
-    model_name = f'{method_name}_ChemoSimulation_{s_size}_{n_actions}_{n_rollouts}_{sig_lvl}'      # name for the saved LabelRanker model
+    method_name = 'Mod_algo' if off_policy_explr else 'Orig_algo'                  # string to store whether modified/original algo is running
+    model_name = f'{method_name}_Chemo_{n_rollouts}_{sig_lvl}_state_tag_{init_state_tag}'      # name for the saved LabelRanker model
 
     ## flags/triggers ##
 
@@ -147,8 +149,8 @@ def evaluations_per_config(s_size
         ### place holders for evaluation metrics ###
 
         # lists to store the evaluation metrics of the run
-        avg_t_size_l = []
-        avg_max_tox_l= []
+        avg_tsize_welness_at_end_l = []
+        #avg_max_tox_l= []
         avg_prob_death_l= []
 
         action_count_li = []       # list to store the action counts in each training iteration
@@ -175,16 +177,17 @@ def evaluations_per_config(s_size
 
                     # generate preference data & executed num. of actions in each action pair evaluation step
                     preference_out, actions_per_pair = evaluate_preference(starting_state = state
-                                                                         , action_1       = action_pair[0]
-                                                                         , action_2       = action_pair[1]
-                                                                         , policy_in      = policy
-                                                                         , label_ranker   = label_r_flag
-                                                                         , modified_algo  = True if off_policy_exploration else False
-                                                                         , n_rollouts     = n_rollouts
-                                                                         , p_sig          = sig_lvl
-                                                                         , tracking       = rollout_tracking
-                                                                         , max_rollout_len = treatment_length_train
-                                                                          )   
+                                                                            , action_1       = action_pair[0]
+                                                                            , action_2       = action_pair[1]
+                                                                            , policy_in      = policy
+                                                                            , label_ranker   = label_r_flag
+                                                                            , modified_algo  = True if off_policy_exploration else False
+                                                                            , n_rollouts     = n_rollouts
+                                                                            , p_sig          = sig_lvl
+                                                                            , tracking       = rollout_tracking
+                                                                            , max_rollout_len = treatment_length_train
+                                                                            , use_toxi_n_tsize = use_toxi_n_tumor_for_pref
+                                                                            )   
 
                     # append the generated preference data to the training data list
                     if preference_out is not None:
@@ -224,8 +227,8 @@ def evaluations_per_config(s_size
                     action_count_li.append(actions_in_iterr)
 
                 # Add None to the evaluation results
-                avg_t_size_l.append(None)
-                avg_max_tox_l.append(None)
+                avg_tsize_welness_at_end_l.append(None)
+                #avg_max_tox_l.append(None)
                 avg_prob_death_l.append(None)
 
                 iterr += 1
@@ -264,8 +267,8 @@ def evaluations_per_config(s_size
 
 
             # evaluate the performance of the learned policy
-            avg_t_size, avg_max_tox, avg_prob_death = run_evaluations(target_policy
-                                                                    , sample_states
+            avg_tsize_welness_at_end, avg_prob_death = run_evaluations(target_policy
+                                                                    #, sample_states
                                                                     , simulations_per_state = eval_simu_per_state
                                                                     , virtual_patients = 200 
                                                                     , sim_episode_length = treatment_length_eval
@@ -274,14 +277,15 @@ def evaluations_per_config(s_size
                                                                     , print_policy_behaviour = policy_behaviour_tracking
                                                                     , model_name_input =  model_name
                                                                     , experiment_run_input = run+1
-                                                                    , adjust_tumor = adjust_tumor_size
+                                                                    , init_state_scenario = init_state_scenario
                                                                     , set_seed_eval = this_seed
-                                                                ) 
+                                                                    , init_state_tag = init_state_tag
+                                                                    ) 
 
 
             # record evaluation results (across training iterations)
-            avg_t_size_l.append(avg_t_size)
-            avg_max_tox_l.append(avg_max_tox)
+            avg_tsize_welness_at_end_l.append(avg_tsize_welness_at_end)
+            #avg_max_tox_l.append(avg_max_tox)
             avg_prob_death_l.append(avg_prob_death)
 
             ### TERMINATION CONDITION ###
@@ -293,15 +297,35 @@ def evaluations_per_config(s_size
                 prvs_avg_prob_death = avg_prob_death_l[-2]
                 curr_avg_prob_death = avg_prob_death_l[-1]
 
-                if prvs_avg_prob_death * (0.5) > curr_avg_prob_death:
-                    print(f'Policy performance decreased! Run-{run+1} terminated!')
+                prvs_avg_tsize_welness = avg_tsize_welness_at_end_l[-2]
+                curr_avg_tsize_welness = avg_tsize_welness_at_end_l[-1]
 
+                # Policy iteration Termination criteria
+                if prvs_avg_prob_death * (1.1) <= curr_avg_prob_death:
+                    print(f'Averege death rate increased by 10%! Policy performance decreased! Run-{run+1} terminated!')
                     # remove the records from the worsen policy
                     avg_prob_death_l = avg_prob_death_l[:-1]
-                    avg_max_tox_l = avg_max_tox_l[:-1]
-                    avg_t_size_l = avg_t_size_l[:-1]
-                    action_count_li = action_count_li[:-1]
-                    
+                    #avg_max_tox_l = avg_max_tox_l[:-1]
+                    avg_tsize_welness_at_end_l = avg_tsize_welness_at_end_l[:-1]
+                    action_count_li = action_count_li[:-1]                    
+                    break
+
+                elif prvs_avg_tsize_welness * (1.1) <= curr_avg_tsize_welness:
+                    print(f'Averege tumor-size + toxicity increased by 10%! Policy performance decreased! Run-{run+1} terminated!')
+                    # remove the records from the worsen policy
+                    avg_prob_death_l = avg_prob_death_l[:-1]
+                    #avg_max_tox_l = avg_max_tox_l[:-1]
+                    avg_tsize_welness_at_end_l = avg_tsize_welness_at_end_l[:-1]
+                    action_count_li = action_count_li[:-1]                    
+                    break
+
+                elif (prvs_avg_tsize_welness * (1.05) <= curr_avg_tsize_welness) and (prvs_avg_prob_death * (1.05) <= curr_avg_prob_death):
+                    print(f'Both averege death rate and tumor-size + toxicity increased by 5%! Policy performance decreased! Run-{run+1} terminated!')
+                    # remove the records from the worsen policy
+                    avg_prob_death_l = avg_prob_death_l[:-1]
+                    #avg_max_tox_l = avg_max_tox_l[:-1]
+                    avg_tsize_welness_at_end_l = avg_tsize_welness_at_end_l[:-1]
+                    action_count_li = action_count_li[:-1]                    
                     break
 
                     
@@ -318,12 +342,19 @@ def evaluations_per_config(s_size
             iterr += 1
 
         # plot and save evaluation results of the training run 
-        fig, ax2 = plt.subplots(figsize = (6,4))
-        ax2.plot(action_count_li, avg_prob_death_l, 'm-.', label = 'probability of death')
-        ax2.set_xlabel('# actions')
-        ax2.set_ylabel('Probability of Death')
-        ax2.legend(loc='upper left')
-        plt.title(f'Experiment Evaluation Results | Run: {run+1}')
+        fig, ax = plt.subplots(figsize = (12,8))
+        ax.plot(action_count_li, avg_prob_death_l, 'r--', label = 'probability of death')
+        ax.set_xlabel('# actions', fontsize=12)
+        ax.set_ylabel('Probability of Death', fontsize=12)
+
+        # twin object for two different y-axis on the sample plot
+        ax2 = ax.twinx()
+        ax2.plot(action_count_li, avg_tsize_welness_at_end_l, 'b--', label = 'tumor size+ toxicity')
+        ax2.set_ylabel('average tumor size+ toxicity', fontsize=12 )
+
+        ax.legend(loc='upper left')
+        ax2.legend(loc='upper right')
+        plt.title(f'Experiment Evaluation Results | Run: {run+1}\n', fontsize=14)
         plt.savefig(f_paths.paths['eval_plot_output'] + f'{model_name}_{run+1}.png') # save the evaluation image
 
         if show_experiment_run_eval_summary_plot: 
@@ -331,14 +362,16 @@ def evaluations_per_config(s_size
         
         # store the evaluation results of the training run
         run_results.append({'S': s_size
-                           , 'Actions' : n_actions
-                           , 'Roll-outs': n_rollouts
-                           , 'Significance' : sig_lvl
-                           , 'run': run+1
-                           , 'action_record': action_count_li
-                           , 'avg_tumor_size': avg_t_size_l
-                           , 'avg_max_toxicity' : avg_max_tox_l
-                           , 'avg_prop_death': avg_prob_death_l})
+                            , 'Actions' : n_actions
+                            , 'Roll-outs': n_rollouts
+                            , 'Significance' : sig_lvl
+                            , 'run': run+1
+                            , 'action_record': action_count_li
+                            #, 'avg_tumor_size': avg_t_size_l
+                            #, 'avg_max_toxicity' : avg_max_tox_l
+                            , 'avg_max_toxicity' : avg_tsize_welness_at_end_l
+                            , 'avg_prop_death': avg_prob_death_l
+                            })
 
         if print_iterr:
             #pbar.close()

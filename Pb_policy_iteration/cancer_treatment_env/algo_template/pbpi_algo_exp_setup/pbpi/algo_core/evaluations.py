@@ -11,7 +11,7 @@ import seaborn as sns
 ### Evaluating the learned policy ####
 
 def run_evaluations(policy               # input policy
-                    , state_list         # list of initial states
+                    #, state_list         # list of initial states
                     , virtual_patients = 200    # step-count (threshold)
                     , env_name    = 'ChemoSimulation-v0' # name of the environment
                     , simulations_per_state = 1 # number of simulations to generate per state
@@ -21,10 +21,10 @@ def run_evaluations(policy               # input policy
                     , print_policy_behaviour = False # Whether to plot action selection vs. pendulum angle
                     , model_name_input     = None # Name of the used LabelRanker model
                     , experiment_run_input = None # At which experiment run the evaluation was called at
-                    , adjust_tumor = False
+                    , init_state_scenario = False
                     , set_seed_eval = None
-                   ):  
-                   
+                    , init_state_tag = 'None'
+                    ):  
     """
     Description:
     
@@ -38,7 +38,7 @@ def run_evaluations(policy               # input policy
     #print(f"\nEvaluation 200 patient generation seed is: {set_seed_eval}\n")
 
     # Create 200 virtual patients | new set of patients generated in each evaluation
-    INIT_STATES = create_initial_state_set(virtual_patients, seed = set_seed_eval, adjust_tumor =  adjust_tumor)
+    INIT_STATES = create_initial_state_set(virtual_patients, seed = set_seed_eval, init_state_scenario =  init_state_scenario)
 
     # create an environment instance
     env_test = gym.make(env_name)
@@ -143,7 +143,7 @@ def run_evaluations(policy               # input policy
 
     plt.close('all')
     
-    def generate_evaluation_plot(init_state_set=INIT_STATES, learned_policy_metrics_df = lrned_p_metrics_df):
+    def generate_evaluation_plot(init_state_set=state_list, learned_policy_metrics_df = lrned_p_metrics_df):
 
         # Create instance of the environment
         env = gym.make('ChemoSimulation-v0')
@@ -239,7 +239,15 @@ def run_evaluations(policy               # input policy
         
         constant_policy_state_data_df = pd.DataFrame(p_data_list)
         all_policy_state_data_df = constant_policy_state_data_df.append(learned_policy_state_data_df)
-        #all_policy_state_data_df.to_csv('delete_this_data2.csv', index=False)
+
+        all_policy_state_data_df.loc[:, 'tumor_size_welness'] = all_policy_state_data_df.tumor_size + all_policy_state_data_df.negative_wellness
+        all_policy_state_data_df.loc[:, 'iteration' ] = iterr_num # add the iteration number
+        all_policy_state_data_df.loc[:, 'seed' ] = set_seed_eval # add the seed
+        all_policy_state_data_df.loc[:, 'init_state_tag' ] = init_state_tag
+        all_policy_state_data_df.to_csv(f_paths.paths['eval_dfs'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_len_{sim_episode_length}_eval_df.csv', index=False)
+
+        all_policy_state_data_df.loc[all_policy_state_data_df.month == all_policy_state_data_df.month.max(),:]
+        avg_tsize_welness_at_end = all_policy_state_data_df.tumor_size_welness.mean()
 
         ##############################################
 
@@ -312,7 +320,7 @@ def run_evaluations(policy               # input policy
                                     | (plot_df_summary.index == 'Low') , 'end_tumor_size'].values     
 
         # Create the plot
-        fig, ax = plt.subplots(nrows =  1, ncols=2, figsize = (14,5))
+        fig, ax = plt.subplots(nrows =  1, ncols=2, figsize = (20,7))
 
         sns.scatterplot(x='end_tumor_size'
                     , y = 'max_toxicity'
@@ -335,9 +343,9 @@ def run_evaluations(policy               # input policy
         ax[0].lines[0].set_linestyle("--")
         ax[0].set(ylim=(0, plot_df_summary.max_toxicity.max() + .5))
         ax[0].grid()
-        ax[0].set_title ('Max Toxicity vs. Tumor size')
-        ax[0].set_ylabel('Max toxicity')
-        ax[0].set_xlabel('Tumor size')
+        ax[0].set_title (f'Max Toxicity vs. Tumor size by the end of {sim_episode_length} months\n', fontsize = 14)
+        ax[0].set_ylabel('Max toxicity (avg. across 200 patients)\n', fontsize = 13)
+        ax[0].set_xlabel('Tumor size (avg. across 200 patients)\n', fontsize = 13)
 
         sns.barplot(y = 'prob_death'
                     , x = plot_df_summary.index
@@ -346,16 +354,16 @@ def run_evaluations(policy               # input policy
                     , palette = sns.color_palette("mako"))
 
 
-        ax[1].set_title ('Average probability of death by treatment-type')
-        ax[1].set_ylabel('Probability of death')
-        ax[1].set_xlabel('Treatment type')
-        plt.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_behaviour.png') # save the evaluation image
+        ax[1].set_title (f'Average probability of death by treatment-type by the end of {sim_episode_length} months\n', fontsize = 14)
+        ax[1].set_ylabel('Probability of death (avg. across 200 patients)\n', fontsize = 13)
+        ax[1].set_xlabel('Treatment type\n', fontsize = 13)
+        plt.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_len_{sim_episode_length}_policy_behaviour.png') # save the evaluation image
         plt.show()  
 
 
         ### Generate treatment regime plots ###
-        all_policy_state_data_df.loc[:, 'tumor_size_welness'] = all_policy_state_data_df.tumor_size + all_policy_state_data_df.negative_wellness
-        plot_df = all_policy_state_data_df.groupby(['treatment','month']).mean().reset_index()
+        #plot_df = all_policy_state_data_df.groupby(['treatment','month']).mean().reset_index()
+        plot_df = all_policy_state_data_df
 
         x_col = 'month'
         hue_col = "treatment"
@@ -381,68 +389,77 @@ def run_evaluations(policy               # input policy
         sns.set_style("ticks")
         #sns.set_context("paper")
 
-        fig, ax = plt.subplots(figsize=(10,15),nrows=3,ncols=1)
+        fig, ax = plt.subplots(figsize=(15,21),nrows=3,ncols=1)
         sns.lineplot(data=plot_df
                     , x=x_col
                     , y='tumor_size'
                     , hue=hue_col
+                    , hue_order= ['Extreme', 'High', 'Random', 'Mid', 'Low', 'Learned']
                     , palette=palette
                     , style=style_col
                     , dashes=style
                     , linewidth =2
-                    , ci = None
+                    , ci = 99
+                    , estimator='mean'
                     , ax=ax[0])
 
         ax[0].set_xlabel('Month', fontsize = 13)
-        ax[0].set_ylabel('Negative wellness\n', fontsize = 13)
-        ax[0].set_title('Tumor size: Averaged across 200 patients', fontsize=14)
+        ax[0].set_ylabel('200 patients average tumor size\n', fontsize = 13)
+        ax[0].set_title('Tumor size\n', fontsize=14)
         ax[0].legend(bbox_to_anchor=(1.02, 1),borderaxespad=0, fontsize=12)
 
         sns.lineplot(data=plot_df
                     , x=x_col
                     , y='negative_wellness'
                     , hue=hue_col
+                    , hue_order= ['Extreme', 'High', 'Random', 'Mid', 'Low', 'Learned']
                     , palette=palette
                     , style=style_col
                     , dashes=style
                     , linewidth =2
-                    , ci = None
+                    , ci = 99
+                    , estimator='mean'
                     , ax=ax[1])
 
         ax[1].set_xlabel('Month', fontsize = 13)
-        ax[1].set_ylabel('Negative wellness\n', fontsize = 13)
-        ax[1].set_title('(Negative) wellness: Averaged across 200 patients', fontsize=14)
+        ax[1].set_ylabel('200 patients average negative wellness\n', fontsize = 13)
+        ax[1].set_title('(Negative) wellness\n', fontsize=14)
         ax[1].legend(bbox_to_anchor=(1.02, 1),borderaxespad=0, fontsize=12)
 
         sns.lineplot(data=plot_df
                     , x=x_col
                     , y='tumor_size_welness'
                     , hue=hue_col
+                    , hue_order= ['Extreme', 'High', 'Random', 'Mid', 'Low', 'Learned']
                     , palette=palette
                     , style=style_col
                     , dashes=style
                     , linewidth =2
-                    , ci = None
+                    , ci = 99
+                    , estimator='mean'
                     , ax=ax[2])
 
         ax[2].set_xlabel('Month', fontsize = 13)
-        ax[2].set_ylabel('Tumor size + Negative wellness\n', fontsize = 13)
-        ax[2].set_title('Tumor Size + (Negative) wellness: Averaged across 200 patients', fontsize=14)
+        ax[2].set_ylabel('200 patients average tumor size + negative wellness\n', fontsize = 13)
+        ax[2].set_title('Tumor Size + (Negative) wellness\n', fontsize=14)
         ax[2].legend(bbox_to_anchor=(1.02, 1),borderaxespad=0, fontsize=12)
 
         fig.tight_layout()
-        fig.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_policy_bhve_monthly.png') # save the evaluation image
+        fig.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_itrr_{iterr_num}_len_{sim_episode_length}_avg_eval.png') # save the evaluation image
         plt.show()
+
+        return avg_tsize_welness_at_end
 
     if print_eval_summary:
         
-        generate_evaluation_plot()
+        avg_tsize_welness_at_end = generate_evaluation_plot()
 
         print(f"\nPolicy Iteration: {iterr_num} - Evaluation results:\n \
                         - Avg. ending tumor size : {avg_t_size[0]}\n \
                         - Avg. max. toxicity : {avg_max_toxicity[0]}\n \
+                        - Avg. tumor size + toxicity (at the end of {sim_episode_length} months): {avg_tsize_welness_at_end}\n \
                         - Avg. prob. of death : {avg_p_death[0]}\n")     
 
-    return avg_t_size, avg_max_toxicity, avg_p_death 
+    return avg_tsize_welness_at_end, avg_p_death 
 
 #######################################

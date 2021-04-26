@@ -45,15 +45,16 @@ def evaluate_preference(starting_state # starting state of roll-outs
                         , max_rollout_len = 6     # maximum length of a roll-out
                         , label_ranker = False    # whether to use the label-ranking model or not
                         , modified_algo = False   # Whether evaluations run for modified algorithm or not
-                        , p_sig = 0.1            # p-value to use for t-test (to compare returns of roll-outs)
+                        , p_sig = 0.1             # p-value to use for t-test (to compare returns of roll-outs)
                         , tracking = False
+                        , use_toxi_n_tsize = False # generate preferences based on sum(max toxicity, tumor size) of rollouts
                         ):
     
     """
     Description:
     
         - Roll-outs are generated at each state in the initial state set by starting from the given input action 
-          and following the given policy afterwards. 
+            and following the given policy afterwards. 
         - Returns of the roll-outs are used to generate preferences for the input action pair.
         - Generated preferences are returned to be create a training dataset to learn the LabelRanker model.    
     """
@@ -70,19 +71,23 @@ def evaluate_preference(starting_state # starting state of roll-outs
         
     # Dictionary to store input action values
     actions = { 'one' : action_1    
-              , 'two' : action_2}    
+                , 'two' : action_2}    
 
     # Dictionary to store tumor sizes at the end of roll-outs
     t_mass = { 'one' : [None]*n_rollouts 
-              , 'two' : [None]*n_rollouts}
+                , 'two' : [None]*n_rollouts}
 
     # Dictionary to store max toxicity values of roll-outs
     toxicity = { 'one' : [None]*n_rollouts 
-              , 'two'  : [None]*n_rollouts}  
+                , 'two'  : [None]*n_rollouts}  
+
+    # Dictionary to store sum(max toxicity, tumor-size) values of roll-outs
+    toxicity_n_tmass = { 'one' : [None]*n_rollouts 
+                        , 'two'  : [None]*n_rollouts} 
 
     # Dictionary to store the probability of death at the end of roll-outs
     prob_death = { 'one' : [None]*n_rollouts 
-                  , 'two'  : [None]*n_rollouts}  
+                    , 'two'  : [None]*n_rollouts}  
 
     # Dictionary to rollout-preferences for each action
     accu_preferences = {'one': 0, 'two': 0}  
@@ -140,52 +145,97 @@ def evaluate_preference(starting_state # starting state of roll-outs
             t_mass[action_key][rollout]     = last_t_mass
             toxicity[action_key][rollout]   = max_toxicity
             prob_death[action_key][rollout] = last_p_death
+            toxicity_n_tmass[action_key][rollout] = last_t_mass + max_toxicity
 
             # close the environment after creating all roll-outs for a specific starting action
             env.close()
             del env
 
 
-        # Generate preference relation information for the rollout
-        if (np.round(prob_death['one'][rollout],2)  >= 1.0) and (np.round(prob_death['two'][rollout],2) >= 1.0):
-            continue
+        # Generate preferences based on the comparison between MAX TOXICITY + TUMOR SIZE
+        if use_toxi_n_tsize:
 
-        elif (np.round(prob_death['one'][rollout],2)  < 1.0) and (np.round(prob_death['two'][rollout],2) >= 1.0):
-            # Patient survives for the trajectory starting from action 'one'
-            accu_preferences['one'] += 1
-            sign_test_vals[rollout] = +1
+            # Generate preference relation information for the rollout
+            if (np.round(prob_death['one'][rollout],2)  >= 1.0) and (np.round(prob_death['two'][rollout],2) >= 1.0):
+                continue
 
-        elif (np.round(prob_death['one'][rollout],2) >= 1.0) and (np.round(prob_death['two'][rollout],2) < 1.0):
-            # Patient survives for the trajectory starting from action 'two'
-            accu_preferences['two'] += 1
-            sign_test_vals[rollout] = -1
+            elif (np.round(prob_death['one'][rollout],2)  < 1.0) and (np.round(prob_death['two'][rollout],2) >= 1.0):
+                # Patient survives for the trajectory starting from action 'one'
+                accu_preferences['one'] += 1
+                sign_test_vals[rollout] = +1
 
-
-        elif (np.round(prob_death['one'][rollout],2) < 1.0) and (np.round(prob_death['one'][rollout],2) < 1.0):
-            # Patient survives for both trajectories starting from both actions
-            
-            if (np.round(toxicity['one'][rollout],4) <= np.round(toxicity['two'][rollout],4)) and \
-               (np.round(t_mass['one'][rollout],4)  <= np.round(t_mass['two'][rollout],4)):
-               # Max toxicity and tumor size of the patient starting from action 'one' is smaller
-               accu_preferences['one'] += 1
-               sign_test_vals[rollout] = +1
-
-            if (np.round(toxicity['one'][rollout],4) >= np.round(toxicity['two'][rollout],4)) and \
-                (np.round(t_mass['one'][rollout],4) >= np.round(t_mass['two'][rollout],4)):
-                # Max toxicity and tumor size of the patient starting from action 'two' is smaller
+            elif (np.round(prob_death['one'][rollout],2) >= 1.0) and (np.round(prob_death['two'][rollout],2) < 1.0):
+                # Patient survives for the trajectory starting from action 'two'
                 accu_preferences['two'] += 1
+                sign_test_vals[rollout] = -1
 
-                # In case both max. toxicity and tumor size are equal for both action trajectories
-                if sign_test_vals[rollout] == +1:
-                    sign_test_vals[rollout] = 0
-                else:
-                    sign_test_vals[rollout] = -1
-        
+            elif (np.round(prob_death['one'][rollout],2) < 1.0) and (np.round(prob_death['one'][rollout],2) < 1.0):
+                # Patient survives for both trajectories starting from both actions
+                
+                if (np.round(toxicity_n_tmass['one'][rollout],4) <= np.round(toxicity_n_tmass['two'][rollout],4)):
+                    # Sum of toxicity and tumor size of the patient starting from action 'one' is smaller
+                    accu_preferences['one'] += 1
+                    sign_test_vals[rollout] = +1
+
+                if (np.round(toxicity_n_tmass['one'][rollout],4) >= np.round(toxicity_n_tmass['two'][rollout],4)):
+                    # Sum of toxicity and tumor size of the patient starting from action 'two' is smaller
+                    accu_preferences['two'] += 1
+
+                    # In case both max. toxicity and tumor size are equal for both action trajectories
+                    if sign_test_vals[rollout] == +1:
+                        sign_test_vals[rollout] = 0
+                    else:
+                        sign_test_vals[rollout] = -1
+            
+            else:
+                # No preference is generated for the rollout
+                accu_preferences['one'] += 0
+                accu_preferences['two'] += 0
+                sign_test_vals[rollout] = 0
+
+        # Generate preferences based on the comparison between MAX TOXICITY and TUMOR SIZE separately
         else:
-            # No preference is generated for the rollout
-            accu_preferences['one'] += 0
-            accu_preferences['two'] += 0
-            sign_test_vals[rollout] = 0
+
+            # Generate preference relation information for the rollout
+            if (np.round(prob_death['one'][rollout],2)  >= 1.0) and (np.round(prob_death['two'][rollout],2) >= 1.0):
+                continue
+
+            elif (np.round(prob_death['one'][rollout],2)  < 1.0) and (np.round(prob_death['two'][rollout],2) >= 1.0):
+                # Patient survives for the trajectory starting from action 'one'
+                accu_preferences['one'] += 1
+                sign_test_vals[rollout] = +1
+
+            elif (np.round(prob_death['one'][rollout],2) >= 1.0) and (np.round(prob_death['two'][rollout],2) < 1.0):
+                # Patient survives for the trajectory starting from action 'two'
+                accu_preferences['two'] += 1
+                sign_test_vals[rollout] = -1
+
+
+            elif (np.round(prob_death['one'][rollout],2) < 1.0) and (np.round(prob_death['one'][rollout],2) < 1.0):
+                # Patient survives for both trajectories starting from both actions
+                
+                if (np.round(toxicity['one'][rollout],4) <= np.round(toxicity['two'][rollout],4)) and \
+                    (np.round(t_mass['one'][rollout],4)  <= np.round(t_mass['two'][rollout],4)):
+                    # Max toxicity and tumor size of the patient starting from action 'one' is smaller
+                    accu_preferences['one'] += 1
+                    sign_test_vals[rollout] = +1
+
+                if (np.round(toxicity['one'][rollout],4) >= np.round(toxicity['two'][rollout],4)) and \
+                    (np.round(t_mass['one'][rollout],4) >= np.round(t_mass['two'][rollout],4)):
+                    # Max toxicity and tumor size of the patient starting from action 'two' is smaller
+                    accu_preferences['two'] += 1
+
+                    # In case both max. toxicity and tumor size are equal for both action trajectories
+                    if sign_test_vals[rollout] == +1:
+                        sign_test_vals[rollout] = 0
+                    else:
+                        sign_test_vals[rollout] = -1
+            
+            else:
+                # No preference is generated for the rollout
+                accu_preferences['one'] += 0
+                accu_preferences['two'] += 0
+                sign_test_vals[rollout] = 0
 
 
     # Clean-up sign-test data after removing 'None' entries
@@ -206,22 +256,22 @@ def evaluate_preference(starting_state # starting state of roll-outs
     # return preference information
     if (m > 0) and (p_val <= p_sig):
         return {'state': s_init
-               , 'a_j' : actions['one']
-               , 'a_k' : actions['two']
-               , 'preference_label' : 1}, action_count
+                , 'a_j' : actions['one']
+                , 'a_k' : actions['two']
+                , 'preference_label' : 1}, action_count
     
     elif(m < 0) and (p_val <= p_sig):
         return {'state': s_init
-               , 'a_j' : actions['one']
-               , 'a_k' : actions['two']
-               , 'preference_label' : 0}, action_count
+                , 'a_j' : actions['one']
+                , 'a_k' : actions['two']
+                , 'preference_label' : 0}, action_count
     
     # return NaN if avg. returns are not significantly different from each other OR are equal
     else: 
         return {'state': np.nan
-               , 'a_j' : np.nan
-               , 'a_k' : np.nan
-               , 'preference_label' : np.nan}, action_count
+                , 'a_j' : np.nan
+                , 'a_k' : np.nan
+                , 'preference_label' : np.nan}, action_count
     
 ##########################################
 
