@@ -323,7 +323,7 @@ def run_evaluations(policy               # input policy
         # Create the plot
         fig, ax = plt.subplots(nrows =  1, ncols=3, figsize = (26,6))
 
-        colors_for_treatments =  ['sienna', 'magenta', 'blue', 'darkorange', 'darkgreen', 'red']
+        colors_for_treatments =  ['sienna', 'magenta', 'blue', 'black', 'darkgreen', 'red']
         plot_df_summary = plot_df_summary.reindex(index = ['Extreme', 'High', 'Random', 'Mid', 'Low', 'Learned'])
 
         sns.scatterplot(x='end_tumor_size'
@@ -393,7 +393,7 @@ def run_evaluations(policy               # input policy
         palette['Learned'] = 'red'
         palette['Random'] = 'blue'
         palette['Low'] = 'darkgreen'
-        palette['Mid'] = 'darkorange'
+        palette['Mid'] = 'black'
         palette['High'] = 'magenta'
         palette['Extreme'] = 'sienna'
 
