@@ -54,7 +54,7 @@ def evaluations_per_config(s_size
                             , treatment_length_eval = 6
                             , off_policy_explr = False
                             , env_name = 'ChemoSimulation-v0'
-                            , init_state_path: str = None
+                            , init_state_group: str = None
                             , show_experiment_run_eval_summary_plot = False
                             , rollout_tracking = False
                             , dataset_tracking = False
@@ -63,7 +63,6 @@ def evaluations_per_config(s_size
                             , policy_behaviour_tracking = False
                             , set_seed = None
                             , init_state_tag = 'None'
-                            , init_state_scenario = False
                             , use_toxi_n_tumor_for_pref = False
                             ):
     
@@ -79,10 +78,7 @@ def evaluations_per_config(s_size
         this_seed = np.random.randint(100) #51
 
     # Load custom initial state data if provided
-    if init_state_path is not None:
-        INIT_STATES = pd.read_csv(init_state_path)
-    else:
-        INIT_STATES = create_initial_state_set(s_size, seed = this_seed, init_state_scenario = init_state_scenario)
+    INIT_STATES = create_initial_state_set(sample_size = s_size, init_state_scenario = init_state_group, seed = this_seed)
     
     print(f"\nState generation seed is {this_seed}\n")
 
@@ -277,7 +273,7 @@ def evaluations_per_config(s_size
                                                                     , print_policy_behaviour = policy_behaviour_tracking
                                                                     , model_name_input =  model_name
                                                                     , experiment_run_input = run+1
-                                                                    , init_state_scenario = init_state_scenario
+                                                                    , init_state_scenario = init_state_group
                                                                     , set_seed_eval = this_seed
                                                                     , init_state_tag = init_state_tag
                                                                     ) 
@@ -301,8 +297,8 @@ def evaluations_per_config(s_size
                 curr_avg_tsize_welness = avg_tsize_welness_at_end_l[-1]
 
                 # Policy iteration Termination criteria
-                if prvs_avg_prob_death * (1.1) <= curr_avg_prob_death:
-                    print(f'Averege death rate increased by 10%! Policy performance decreased! Run-{run+1} terminated!')
+                if prvs_avg_prob_death * (1.2) <= curr_avg_prob_death:
+                    print(f'Averege death rate increased by 20%! Policy performance decreased! Run-{run+1} terminated!')
                     # remove the records from the worsen policy
                     avg_prob_death_l = avg_prob_death_l[:-1]
                     #avg_max_tox_l = avg_max_tox_l[:-1]
@@ -310,8 +306,8 @@ def evaluations_per_config(s_size
                     action_count_li = action_count_li[:-1]                    
                     break
 
-                elif prvs_avg_tsize_welness * (1.1) <= curr_avg_tsize_welness:
-                    print(f'Averege tumor-size + toxicity increased by 10%! Policy performance decreased! Run-{run+1} terminated!')
+                elif prvs_avg_tsize_welness * (1.2) <= curr_avg_tsize_welness:
+                    print(f'Averege tumor-size + toxicity increased by 20%! Policy performance decreased! Run-{run+1} terminated!')
                     # remove the records from the worsen policy
                     avg_prob_death_l = avg_prob_death_l[:-1]
                     #avg_max_tox_l = avg_max_tox_l[:-1]
@@ -319,8 +315,8 @@ def evaluations_per_config(s_size
                     action_count_li = action_count_li[:-1]                    
                     break
 
-                elif (prvs_avg_tsize_welness * (1.05) <= curr_avg_tsize_welness) and (prvs_avg_prob_death * (1.05) <= curr_avg_prob_death):
-                    print(f'Both averege death rate and tumor-size + toxicity increased by 5%! Policy performance decreased! Run-{run+1} terminated!')
+                elif (prvs_avg_tsize_welness * (1.1) <= curr_avg_tsize_welness) and (prvs_avg_prob_death * (1.1) <= curr_avg_prob_death):
+                    print(f'Both averege death rate and tumor-size + toxicity increased by 10%! Policy performance decreased! Run-{run+1} terminated!')
                     # remove the records from the worsen policy
                     avg_prob_death_l = avg_prob_death_l[:-1]
                     #avg_max_tox_l = avg_max_tox_l[:-1]

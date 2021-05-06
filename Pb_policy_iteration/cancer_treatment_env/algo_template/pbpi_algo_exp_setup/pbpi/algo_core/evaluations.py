@@ -12,7 +12,7 @@ import seaborn as sns
 
 def run_evaluations(policy               # input policy
                     #, state_list         # list of initial states
-                    , virtual_patients = 200    # step-count (threshold)
+                    , virtual_patients = 200    # number of virtual patients
                     , env_name    = 'ChemoSimulation-v0' # name of the environment
                     , simulations_per_state = 1 # number of simulations to generate per state
                     , sim_episode_length =  6 # number of steps to continue in one episode
@@ -38,7 +38,7 @@ def run_evaluations(policy               # input policy
     #print(f"\nEvaluation 200 patient generation seed is: {set_seed_eval}\n")
 
     # Create 200 virtual patients | new set of patients generated in each evaluation
-    INIT_STATES = create_initial_state_set(virtual_patients, seed = set_seed_eval, init_state_scenario =  init_state_scenario)
+    INIT_STATES = create_initial_state_set(sample_size = virtual_patients, init_state_scenario =  init_state_scenario, seed = set_seed_eval )
 
     # create an environment instance
     env_test = gym.make(env_name)
@@ -58,6 +58,13 @@ def run_evaluations(policy               # input policy
     state_data_list = []
 
     state_list = INIT_STATES
+    death_count_dict = {'Extreme'   : 0
+                        , 'High'    : 0
+                        , 'Random'  : 0
+                        , 'Mid'     : 0
+                        , 'Low'     : 0
+                        , 'Learned' : 0}
+
     # iterate over all states in the state list
     for state in state_list:        
         
@@ -106,21 +113,11 @@ def run_evaluations(policy               # input policy
                 ep_max_toxicity = max(ep_max_toxicity, obs[1])
                 ep_p_death = p_death
 
-                if done: break
+                if done:
+                    death_count_dict['Learned'] += 1
+                    break
 
             env_test.close()
-
-            # # append the return of the episode
-            # ep_returns.append(return_ep)
-            
-            # # update the max and min return variables
-            # max_return = max(max_return,return_ep)
-            # min_return = min(min_return,return_ep)
-            
-            # # increment the sufficient policy count if return exceeds given threshold
-            # # (note: at every step, 1 reward is produced in the environment)
-            # if return_ep >= step_thresh:
-            #     suf_policy_count += 1
         
         # Add the episodic eval. metric values to the totals
         avg_t_size = avg_t_size + ep_t_size
@@ -211,6 +208,7 @@ def run_evaluations(policy               # input policy
                         p_data_list.append(p_data_dict)
                         
                         if done:
+                            death_count_dict[level] += 1
                             break
 
                 else:
@@ -230,6 +228,7 @@ def run_evaluations(policy               # input policy
                         p_data_list.append(p_data_dict)
                         
                         if done:
+                            death_count_dict[level] += 1
                             break
 
                 env.close()
@@ -308,6 +307,8 @@ def run_evaluations(policy               # input policy
 
         ##################### Plotting data #####################
 
+        death_count_df = pd.DataFrame(death_count_dict, index=['death_count']).T
+        
         # Data for the connecting line (excluding random dosage)
         line_y = plot_df_summary.loc[(plot_df_summary.index == 'Extreme') \
                                     | (plot_df_summary.index == 'High') \
@@ -320,13 +321,17 @@ def run_evaluations(policy               # input policy
                                     | (plot_df_summary.index == 'Low') , 'end_tumor_size'].values     
 
         # Create the plot
-        fig, ax = plt.subplots(nrows =  1, ncols=2, figsize = (20,7))
+        fig, ax = plt.subplots(nrows =  1, ncols=3, figsize = (26,6))
+
+        colors_for_treatments =  ['sienna', 'magenta', 'blue', 'darkorange', 'darkgreen', 'red']
+        plot_df_summary = plot_df_summary.reindex(index = ['Extreme', 'High', 'Random', 'Mid', 'Low', 'Learned'])
 
         sns.scatterplot(x='end_tumor_size'
                     , y = 'max_toxicity'
                     , data = plot_df_summary
                     , s=120
                     , ax = ax[0]
+                    , color= 'grey'
                     )
 
         for i in range(plot_df_summary.shape[0]):
@@ -338,7 +343,8 @@ def run_evaluations(policy               # input policy
 
         sns.lineplot(x = line_x
                     , y = line_y
-                    , ax = ax[0])
+                    , ax = ax[0]
+                    , color= 'grey' )
 
         ax[0].lines[0].set_linestyle("--")
         ax[0].set(ylim=(0, plot_df_summary.max_toxicity.max() + .5))
@@ -351,12 +357,24 @@ def run_evaluations(policy               # input policy
                     , x = plot_df_summary.index
                     , data = plot_df_summary
                     , ax =  ax[1]
-                    , palette = sns.color_palette("mako"))
+                    , palette = sns.set_palette(colors_for_treatments))
 
 
         ax[1].set_title (f'Average probability of death by treatment-type by the end of {sim_episode_length} months\n', fontsize = 14)
         ax[1].set_ylabel('Probability of death (avg. across 200 patients)\n', fontsize = 13)
         ax[1].set_xlabel('Treatment type\n', fontsize = 13)
+
+        sns.barplot(y   = 'death_count'
+                    , x = death_count_df.index
+                    , data = death_count_df
+                    , ax    =  ax[2]
+                    , palette = sns.set_palette(colors_for_treatments))
+
+
+        ax[2].set_title (f'Number of death by treatment-type by the end of {sim_episode_length} months\n', fontsize = 14)
+        ax[2].set_ylabel('Count of deaths\n', fontsize = 13)
+        ax[2].set_xlabel('Treatment type\n', fontsize = 13)
+
         plt.savefig(f_paths.paths['policy_behavior_output'] + f'{model_name_input}_run_{experiment_run_input}_iterr_{iterr_num}_len_{sim_episode_length}_policy_behaviour.png') # save the evaluation image
         plt.show()  
 
